@@ -7,20 +7,37 @@ WINDOW_HEIGHT = 500
 REFRESH_RATE = 60
 
 
-def stating_screen():
+def draw_circle_at_cursor(screen, radius, color):
+    # Get the current cursor position
+    pos = pygame.mouse.get_pos()
+
+    # Draw the circle at the cursor position
+    pygame.draw.circle(screen, color, pos, radius)
 
 
+def draw_screen(screen, clock):
+    pygame.display.set_caption("Draw Circle at Cursor")
+    screen.fill('black')
+    # circle properties
+    circle_radius = 5
+    circle_color = (0, 255, 0)  # Green
 
-def main():
-    pygame.init()
+    active = True
+    while active:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                active = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                # Draw the circle at the cursor
+                draw_circle_at_cursor(screen, circle_radius, circle_color)
 
+        # Update the display
+        pygame.display.flip()
+        clock.tick(REFRESH_RATE)
+
+
+def stating_screen(screen, clock):
     pygame.display.set_caption("Garthicc Phone")
-
-    # it will display on screen
-    size = (WINDOW_WIDTH, WINDOW_HEIGHT)
-    screen = pygame.display.set_mode(size)
-
-    clock = pygame.time.Clock()
 
     # basic font for user typed
     base_font = pygame.font.Font(None, 32)
@@ -40,7 +57,6 @@ def main():
 
     active = True
     while active:
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 active = False
@@ -84,8 +100,19 @@ def main():
         # display.flip() will update only a portion of the
         # screen to updated, not full area
         pygame.display.flip()
-
         clock.tick(REFRESH_RATE)
+
+
+def main():
+    pygame.init()
+    # it will display on screen
+    size = (WINDOW_WIDTH, WINDOW_HEIGHT)
+    screen = pygame.display.set_mode(size)
+    clock = pygame.time.Clock()
+
+    stating_screen(screen, clock)
+
+    draw_screen(screen, clock)
     pygame.quit()
 
 
