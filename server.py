@@ -1,7 +1,7 @@
 import logging
 import socket
 
-logging.basicConfig(filename='my_log.log', level=logging.DEBUG)
+logging.basicConfig(filename='my_log_server.log', level=logging.DEBUG)
 
 IP = '127.0.0.1'
 PORT = 16241
@@ -21,20 +21,19 @@ def main():
         my_socket.bind(('127.0.0.1', PORT))
         my_socket.listen(QUEUE_LEN)
         logging.debug('waiting for connection...')
-        while True:
-            client_socket, client_address = my_socket.accept()
-            response = ''
-            try:
-                while response != 'exit':
-                    request = Protocol.receive_(client_socket)
-                    logging.debug('server received: ' + str(request))
-                    response = return_answer(request, client_socket)
-            except socket.error as err:
-                logging.debug('received socket error on client socket' + str(err))
-            finally:
-                client_socket.close()
-                logging.debug('user disconnected')
-    except socket.error as err:
+        client_socket, client_address = my_socket.accept()
+        response = ''
+        try:
+            while response != 'exit':
+                request = my_socket.recv(MAX_PACKET)
+                logging.debug('server received: ' + str(request))
+                print('request: ' + request)
+        except socket.error as err:
+            logging.debug('received socket error on client socket' + str(err))
+        finally:
+            client_socket.close()
+            logging.debug('user disconnected')
+    except Exception as err:
         logging.error('received socket error on server socket' + str(err))
     finally:
         my_socket.close()
