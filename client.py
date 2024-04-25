@@ -6,6 +6,7 @@ import logging
 from InputBox import InputBox
 from Button import Button
 
+
 # Constants
 FONT = pygame.font.SysFont('arialblack', 32)
 # screen

@@ -47,7 +47,6 @@ def main():
             print('connected to: ' + client_address)
             start_new_thread(threaded_client, (client_socket,))
         try:
-
         except socket.error as err:
             logging.debug('received socket error on client socket' + str(err))
             print('received socket error on client socket' + str(err))
