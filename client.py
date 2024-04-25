@@ -17,7 +17,7 @@ REFRESH_RATE = 165
 
 # server
 SERVER_IP = '127.0.0.1'
-SERVER_PORT = 16241
+SERVER_PORT = 5555
 
 PRESS_START_IMAGE_PATH = r'C:\Users\nati2\PycharmProjects\GarthicPhone\press_start.png'
 
@@ -116,7 +116,7 @@ def draw_screen(screen, clock):
             if event.type == pygame.MOUSEBUTTONUP:
                 draw = False
 
-        pygame.draw.circle(screen, active_color, (400, 35), 25)
+        pygame.draw.rect(screen, active_color, [16, 566, 160, 64], 0, 7)
 
         for button in buttons_list:
             button.change_color()
@@ -180,7 +180,7 @@ def start_screen(screen, clock):
 
     screen.fill((52, 78, 91))
 
-    draw_text('press any key to start', FONT, (255, 255, 255), WINDOW_WIDTH/2, WINDOW_HEIGHT/2, screen)
+    draw_text('press any key to start', FONT, (255, 255, 255), 160, 250, screen)
     active = True
     while active:
         for event in pygame.event.get():
