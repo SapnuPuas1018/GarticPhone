@@ -3,6 +3,7 @@ import os
 import socket
 import logging
 
+from AnimatedButton import AnimatedButton
 from InputBox import InputBox
 from Button import Button
 
@@ -81,10 +82,9 @@ def draw_screen(screen, clock):
     brush_list = brush_sizes(screen)
     color_list, rgb_list = color_palette(screen)
 
-    DONE_BUTTON = Button(image=None, pos=(1040, 670),
-                         text_input="done", font=FONT, base_color="White", hovering_color="Black")
-    CLEAR_BUTTON = Button(image=None, pos=(235, 670),
-                          text_input="clear", font=FONT, base_color="White", hovering_color="Black")
+    DONE_BUTTON = AnimatedButton('Done', 150, 40, (938, 658), 8)
+
+    CLEAR_BUTTON = AnimatedButton('Clear', 150, 40, (192, 658), 8)
 
     buttons_list = [DONE_BUTTON, CLEAR_BUTTON]
 
@@ -104,24 +104,25 @@ def draw_screen(screen, clock):
                 for i in range(len(color_list)):
                     if color_list[i].collidepoint(pygame.mouse.get_pos()):
                         active_color = rgb_list[i]
-                # buttons
-                if CLEAR_BUTTON.check_for_input():
-                    pygame.draw.rect(screen, 'white', [192, 90, 896, 540])
-                if DONE_BUTTON.check_for_input():
-                    if not done:
-                        done = True
-                    else:
-                        done = False
                 # draw
                 draw = True
             if event.type == pygame.MOUSEBUTTONUP:
                 draw = False
 
+            if event.type == pygame.MOUSEBUTTONUP:
+                draw = False
+                if CLEAR_BUTTON.pressed:
+                    pygame.draw.rect(screen, 'white', [192, 90, 896, 540])
+                if DONE_BUTTON.pressed:
+                    if not done:
+                        done = True
+                    else:
+                        done = False
+
         pygame.draw.rect(screen, active_color, [16, 566, 160, 64], 0, 7)
 
         for button in buttons_list:
-            button.change_color()
-            button.update(screen)
+            button.draw(screen)
 
         if not done and draw:
             clip = pygame.Rect((192, 90, 896, 540))
@@ -136,9 +137,10 @@ def draw_screen(screen, clock):
 
 def main_menu(screen, clock):
     pygame.display.set_caption("Garthicc Phone")
-    READY_BUTTON = Button(image=None, pos=(100, 100),
-                          text_input="READY", font=FONT, base_color="White", hovering_color="Black")
-    buttons_list = [READY_BUTTON]
+    # READY_BUTTON = Button(image=None, pos=(100, 100),
+    #                       text_input="READY", font=FONT, base_color="White", hovering_color="Black")
+    READY_BUTTON = AnimatedButton('Ready', 200, 40, (100, 100), 8)
+    button_list = [READY_BUTTON]
 
     user_name = ''
     input_box = InputBox(560, 344, 140, 32)
@@ -149,11 +151,9 @@ def main_menu(screen, clock):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 active = False
-
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                for button in buttons_list:
-                    if button.check_for_input():
-                        active = False
+            if event.type == pygame.MOUSEBUTTONUP:
+                if READY_BUTTON.pressed:
+                    active = False
             for box in input_boxes:
                 user_name = box.handle_event(event)
 
@@ -161,15 +161,60 @@ def main_menu(screen, clock):
         draw_text('Enter your name:', FONT, (255, 255, 255), 160, 250, screen)
         for box in input_boxes:
             box.update()
-        for button in buttons_list:
-            button.change_color()
-            button.update(screen)
+        for button in button_list:
+            button.draw(screen)
 
         for box in input_boxes:
             box.draw(screen)
         if user_name is not None or '':
             print(user_name)
 
+        pygame.display.flip()
+        clock.tick(REFRESH_RATE)
+
+
+def join_screen(screen, clock, my_socket):
+    pygame.display.set_caption("join screen")
+
+    screen.fill((52, 78, 91))
+
+    JOIN_BUTTON = AnimatedButton('JOIN', 200, 40, (100, 100), 8)
+    buttons_list = [JOIN_BUTTON]
+
+    user_name = ''
+    input_box = InputBox(560, 344, 140, 32)
+    input_boxes = [input_box]
+
+    active = True
+    while active:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                active = False
+            for box in input_boxes:
+                input_box.handle_event(event)
+                user_name = box.text
+            if event.type == pygame.MOUSEBUTTONUP:
+                if JOIN_BUTTON.pressed:
+                    if user_name != '' and user_name is not None:
+                        try:
+                            print(user_name)
+                            my_socket.connect(('127.0.0.1', SERVER_PORT))
+                            logging.debug('connected')
+                            active = False
+                            my_socket.send(user_name.encode())
+                        except socket.error as err:
+                            logging.error('received socket error on client socket' + str(err))
+                            print('received socket error on client socket' + str(err))
+                            active = True
+        screen.fill((52, 78, 91))
+        for button in buttons_list:
+            button.draw(screen)
+
+        for box in input_boxes:
+            box.update()
+        for box in input_boxes:
+            box.draw(screen)
+        # Update the display
         pygame.display.flip()
         clock.tick(REFRESH_RATE)
 
@@ -211,16 +256,13 @@ def get_font(size):  # Returns Press-Start-2P in the desired size
 def main():
     pygame.init()
     pygame.font.init()
-    # my_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    my_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        # my_socket.connect(('127.0.0.1', SERVER_PORT))
-        # logging.debug('connected')
-
         screen = pygame.display.set_mode(SIZE)
         clock = pygame.time.Clock()
 
         start_screen(screen, clock)
-
+        join_screen(screen, clock, my_socket)
         main_menu(screen, clock)
 
         draw_screen(screen, clock)
