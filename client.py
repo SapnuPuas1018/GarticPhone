@@ -239,6 +239,7 @@ def start_screen(screen, clock):
         clock.tick(REFRESH_RATE)
     return True
 
+
 def set_screen():
     os.environ['SDL_VIDEO_CENTERED'] = '1'
     info = pygame.display.Info()
