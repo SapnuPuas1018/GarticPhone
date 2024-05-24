@@ -5,7 +5,6 @@ import logging
 
 from AnimatedButton import AnimatedButton
 from InputBox import InputBox
-from Button import Button
 
 
 # Constants
@@ -114,10 +113,7 @@ def draw_screen(screen, clock):
                 if CLEAR_BUTTON.pressed:
                     pygame.draw.rect(screen, 'white', [192, 90, 896, 540])
                 if DONE_BUTTON.pressed:
-                    if not done:
-                        done = True
-                    else:
-                        done = False
+                    done = not done
 
         pygame.draw.rect(screen, active_color, [16, 566, 160, 64], 0, 7)
 
@@ -135,17 +131,14 @@ def draw_screen(screen, clock):
         clock.tick(REFRESH_RATE)
 
 
-def main_menu(screen, clock):
+def main_menu(screen, clock, my_socket):
     pygame.display.set_caption("Garthicc Phone")
     # READY_BUTTON = Button(image=None, pos=(100, 100),
     #                       text_input="READY", font=FONT, base_color="White", hovering_color="Black")
     READY_BUTTON = AnimatedButton('Ready', 200, 40, (100, 100), 8)
     button_list = [READY_BUTTON]
-
-    user_name = ''
-    input_box = InputBox(560, 344, 140, 32)
-    input_boxes = [input_box]
-
+    my_socket.setblocking(False)
+    is_ready = False
     active = True
     while active:
         for event in pygame.event.get():
@@ -153,21 +146,25 @@ def main_menu(screen, clock):
                 active = False
             if event.type == pygame.MOUSEBUTTONUP:
                 if READY_BUTTON.pressed:
-                    active = False
-            for box in input_boxes:
-                user_name = box.handle_event(event)
+                    is_ready = not is_ready
+                    if is_ready:
+                        READY_BUTTON.set_text('Unready')
+                    else:
+                        READY_BUTTON.set_text('Ready')
+                    my_socket.send(str(is_ready).encode())
+                    print(is_ready)
+
+        try:
+            data = my_socket.recv(1024).decode()
+            if data == 'game started':
+                print('check')
+                active = False
+        except BlockingIOError:
+            pass
 
         screen.fill((52, 78, 91))
-        draw_text('Enter your name:', FONT, (255, 255, 255), 160, 250, screen)
-        for box in input_boxes:
-            box.update()
         for button in button_list:
             button.draw(screen)
-
-        for box in input_boxes:
-            box.draw(screen)
-        if user_name is not None or '':
-            print(user_name)
 
         pygame.display.flip()
         clock.tick(REFRESH_RATE)
@@ -189,7 +186,7 @@ def join_screen(screen, clock, my_socket):
     while active:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                active = False
+                return False
             for box in input_boxes:
                 input_box.handle_event(event)
                 user_name = box.text
@@ -207,6 +204,7 @@ def join_screen(screen, clock, my_socket):
                             print('received socket error on client socket' + str(err))
                             active = True
         screen.fill((52, 78, 91))
+        draw_text('Enter your name:', FONT, (255, 255, 255), 160, 250, screen)
         for button in buttons_list:
             button.draw(screen)
 
@@ -217,6 +215,7 @@ def join_screen(screen, clock, my_socket):
         # Update the display
         pygame.display.flip()
         clock.tick(REFRESH_RATE)
+    return True
 
 
 def start_screen(screen, clock):
@@ -233,12 +232,12 @@ def start_screen(screen, clock):
             if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                 active = False
             if event.type == pygame.QUIT:
-                active = False
+                return False
 
         # Update the display
         pygame.display.flip()
         clock.tick(REFRESH_RATE)
-
+    return True
 
 def set_screen():
     os.environ['SDL_VIDEO_CENTERED'] = '1'
@@ -261,13 +260,13 @@ def main():
         screen = pygame.display.set_mode(SIZE)
         clock = pygame.time.Clock()
 
-        start_screen(screen, clock)
-        join_screen(screen, clock, my_socket)
-        main_menu(screen, clock)
-
-        draw_screen(screen, clock)
+        if start_screen(screen, clock):
+            if join_screen(screen, clock, my_socket):
+                main_menu(screen, clock, my_socket)
+                draw_screen(screen, clock)
     except socket.error as err:
         logging.error('received socket error on client socket' + str(err))
+        print('received socket error on client socket' + str(err))
     finally:
         pygame.quit()
 
