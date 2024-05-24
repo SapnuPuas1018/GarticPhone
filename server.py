@@ -60,7 +60,6 @@ def handle_connection(client_socket, socket_dict, client_address):
 def main():
     """
     Initializes and manages the socket server.
-
     :return: None
     """
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -84,7 +83,6 @@ def main():
 
     finally:
         server_socket.close()
-
 
 if __name__ == '__main__':
     main()
