@@ -137,6 +137,8 @@ def first_sentence(screen, clock, my_socket):
     SEND_BUTTON = AnimatedButton('Send', 150, 40, (938, 658), 8)
     screen.fill((52, 78, 91))
 
+    my_socket.setblocking(False)
+
     sentence = ''
     input_box = InputBox(560, 344, 140, 32)
     input_boxes = [input_box]
@@ -166,6 +168,11 @@ def first_sentence(screen, clock, my_socket):
             SEND_BUTTON.draw(screen)
         # Update the display
         pygame.display.flip()
+        try:
+            if my_socket.recv(1024).decode() == 'idk':
+                active = False
+        except BlockingIOError:
+            pass
         clock.tick(REFRESH_RATE)
     return True
 

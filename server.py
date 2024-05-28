@@ -11,59 +11,63 @@ PORT = 5555
 QUEUE_LEN = 20
 MAX_PACKET = 1024
 
-player_list = []
+player_dict = []
 ready_count = 0
+count = 0
 
 
-def send_to_everyone(player_list, data):
-    for sock in player_list:
+def send_to_everyone(player_dict, data):
+    for sock in player_dict:
         sock.socket.sendall(data.encode())
 
 
-def is_everyone_ready(client_socket, player_list):
+def is_everyone_ready(client_socket, player_dict):
     global ready_count
     is_ready = client_socket.recv(MAX_PACKET).decode()
-    print(is_ready)
 
     if is_ready == 'True':
         ready_count += 1
     else:
         ready_count -= 1
 
-    print(ready_count)
-    if 2 <= len(player_list) == ready_count:
-        send_to_everyone(player_list, 'game started')
+    if 2 <= len(player_dict) == ready_count:
+        send_to_everyone(player_dict, 'game started')
         return True
 
 
-def receive_sentences():
-    pass
+def receive_sentences(client_socket, player_dict, this_player):
+    global count
+    while True:
+        sentence = client_socket.recv(MAX_PACKET).decode()
+        if sentence != '' and sentence is not None:
+            break
+    print('sentence: ' + sentence)
+    player_dict[this_player] = sentence
+    count += 1
+    print('count: ' + str(count))
+    print(player_dict)
+
+    if count == len(player_dict):   # check if everyone has sent their sentence
+        send_to_everyone(player_dict, 'idk')
+        return True
+    return False
 
 
-def handle_connection(client_socket, player_list):
+def handle_connection(client_socket, player_dict, this_player):
     """
     handle a connection
     :param client_socket: the connection socket
     :param client_address: the remote address
     :return: None
     """
-    global sentence_list
     try:
         ok = False
         while not ok:
-            ok = is_everyone_ready(client_socket, player_list)
+            ok = is_everyone_ready(client_socket, player_dict)
 
-        sentence_list = []
-        while True:
-            sentence = client_socket.recv(MAX_PACKET).decode()
-            if sentence != '' and sentence is not None:
-                break
-        print(sentence)
-        sentence_list.append(sentence)
-        print(sentence_list)
-
-        if len(sentence_list) == len(player_list):
-            send_to_everyone(player_list, 'idk')
+        ok = False
+        while not ok:
+            ok = receive_sentences(client_socket, player_dict, this_player)
 
     except socket.error as err:
         print('received socket exception - ' + str(err))
@@ -83,15 +87,15 @@ def main():
         logging.debug('waiting for connection...')
         print("Listening for connections on port %d" % PORT)
 
-        player_list = []
+        player_dict = {}
         while True:
             client_socket, client_address = server_socket.accept()
             print('New connection received from ' + client_address[0] + ':' + str(client_address[1]))
             name = client_socket.recv(MAX_PACKET).decode()
-            player_list.append(Player(name, client_socket, client_address))
-            print(player_list)
+            this_player = Player(name, client_socket, client_address)
+            player_dict[this_player] = ''
             thread = Thread(target=handle_connection,
-                            args=(client_socket, player_list))
+                            args=(client_socket, player_dict, this_player))
             thread.start()
 
     except socket.error as err:
