@@ -2,6 +2,8 @@ import pygame
 import os
 import socket
 import logging
+import time
+import threading
 
 from AnimatedButton import AnimatedButton
 from InputBox import InputBox
@@ -131,7 +133,44 @@ def draw_screen(screen, clock):
         clock.tick(REFRESH_RATE)
 
 
-def main_menu(screen, clock, my_socket):
+def first_sentence(screen, clock, my_socket):
+    SEND_BUTTON = AnimatedButton('Send', 150, 40, (938, 658), 8)
+    screen.fill((52, 78, 91))
+
+    sentence = ''
+    input_box = InputBox(560, 344, 140, 32)
+    input_boxes = [input_box]
+
+    sent = False
+    active = True
+    while active:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return False
+            if event.type == pygame.MOUSEBUTTONUP:
+                if SEND_BUTTON.pressed:
+                    if sentence != '' and sentence is not None:
+                        my_socket.send(sentence.encode())
+                        sent = True
+            for box in input_boxes:
+                input_box.handle_event(event)
+                sentence = box.text
+
+        screen.fill((52, 78, 91))
+        for box in input_boxes:
+            box.update()
+        for box in input_boxes:
+            box.draw(screen)
+
+        if not sent:
+            SEND_BUTTON.draw(screen)
+        # Update the display
+        pygame.display.flip()
+        clock.tick(REFRESH_RATE)
+    return True
+
+
+def lobby(screen, clock, my_socket):
     pygame.display.set_caption("Garthicc Phone")
     # READY_BUTTON = Button(image=None, pos=(100, 100),
     #                       text_input="READY", font=FONT, base_color="White", hovering_color="Black")
@@ -144,6 +183,7 @@ def main_menu(screen, clock, my_socket):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 active = False
+
             if event.type == pygame.MOUSEBUTTONUP:
                 if READY_BUTTON.pressed:
                     is_ready = not is_ready
@@ -263,7 +303,8 @@ def main():
 
         if start_screen(screen, clock):
             if join_screen(screen, clock, my_socket):
-                main_menu(screen, clock, my_socket)
+                lobby(screen, clock, my_socket)
+                first_sentence(screen, clock, my_socket)
                 draw_screen(screen, clock)
     except socket.error as err:
         logging.error('received socket error on client socket' + str(err))

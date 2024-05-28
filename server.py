@@ -36,6 +36,10 @@ def is_everyone_ready(client_socket, player_list):
         return True
 
 
+def receive_sentences():
+    pass
+
+
 def handle_connection(client_socket, player_list):
     """
     handle a connection
@@ -43,10 +47,23 @@ def handle_connection(client_socket, player_list):
     :param client_address: the remote address
     :return: None
     """
+    global sentence_list
     try:
         ok = False
         while not ok:
             ok = is_everyone_ready(client_socket, player_list)
+
+        sentence_list = []
+        while True:
+            sentence = client_socket.recv(MAX_PACKET).decode()
+            if sentence != '' and sentence is not None:
+                break
+        print(sentence)
+        sentence_list.append(sentence)
+        print(sentence_list)
+
+        if len(sentence_list) == len(player_list):
+            send_to_everyone(player_list, 'idk')
 
     except socket.error as err:
         print('received socket exception - ' + str(err))

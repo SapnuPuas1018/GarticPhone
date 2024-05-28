@@ -5,3 +5,4 @@ class Player:
         self.name = name
         self.socket = socket
         self.address = address
+        self.sentence = ''
