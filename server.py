@@ -1,5 +1,6 @@
 import logging
 import socket
+import threading
 from threading import Thread
 from player import Player
 
@@ -7,9 +8,11 @@ logging.basicConfig(filename='my_log_server.log', level=logging.DEBUG)
 
 
 IP = '127.0.0.1'
-PORT = 5555
+PORT = 5556
 QUEUE_LEN = 20
 MAX_PACKET = 1024
+LOCK_COUNT = threading.Lock()
+
 
 player_dict = []
 ready_count = 0
@@ -18,39 +21,37 @@ count = 0
 
 def send_to_everyone(player_dict, data):
     for sock in player_dict:
-        sock.socket.sendall(data.encode())
+        sock.socket.send(data.encode())
 
 
-def is_everyone_ready(client_socket, player_dict):
+def is_everyone_ready(client_socket):
     global ready_count
     is_ready = client_socket.recv(MAX_PACKET).decode()
-
-    if is_ready == 'True':
-        ready_count += 1
-    else:
-        ready_count -= 1
-
-    if 2 <= len(player_dict) == ready_count:
-        send_to_everyone(player_dict, 'game started')
-        return True
+    with LOCK_COUNT:
+        print('ready_count:' + str(ready_count))
+        if is_ready == 'True':
+            ready_count += 1
+        else:
+            ready_count -= 1
 
 
-def receive_sentences(client_socket, player_dict, this_player):
+def receive_sentence(client_socket, player_dict, this_player):
+    print('kaka')
     global count
     while True:
         sentence = client_socket.recv(MAX_PACKET).decode()
+        print('sentence: ' + sentence)
         if sentence != '' and sentence is not None:
             break
-    print('sentence: ' + sentence)
-    player_dict[this_player] = sentence
-    count += 1
-    print('count: ' + str(count))
-    print(player_dict)
 
-    if count == len(player_dict):   # check if everyone has sent their sentence
-        send_to_everyone(player_dict, 'idk')
-        return True
-    return False
+    player_dict[this_player] = sentence
+    with LOCK_COUNT:
+        count += 1
+        print('count: ' + str(count))
+
+    print(sentence)
+
+    print(player_dict)
 
 
 def handle_connection(client_socket, player_dict, this_player):
@@ -61,13 +62,24 @@ def handle_connection(client_socket, player_dict, this_player):
     :return: None
     """
     try:
-        ok = False
-        while not ok:
-            ok = is_everyone_ready(client_socket, player_dict)
 
-        ok = False
-        while not ok:
-            ok = receive_sentences(client_socket, player_dict, this_player)
+        is_everyone_ready(client_socket)
+
+        while True:
+            with LOCK_COUNT:
+                if 2 <= len(player_dict) == ready_count:
+                    break
+        client_socket.send('game started'.encode())
+
+        print('done')
+
+        receive_sentence(client_socket, player_dict, this_player)
+        # checks if everyone has sent their sentence
+        while True:
+            with LOCK_COUNT:
+                if count == len(player_dict):
+                    break
+        client_socket.send('idk'.encode())
 
     except socket.error as err:
         print('received socket exception - ' + str(err))

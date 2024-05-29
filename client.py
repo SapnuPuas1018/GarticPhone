@@ -3,7 +3,8 @@ import os
 import socket
 import logging
 import time
-import threading
+import pyscreeze
+
 
 from AnimatedButton import AnimatedButton
 from InputBox import InputBox
@@ -20,7 +21,7 @@ REFRESH_RATE = 165
 
 # server
 SERVER_IP = '127.0.0.1'
-SERVER_PORT = 5555
+SERVER_PORT = 5556
 
 PRESS_START_IMAGE_PATH = r'C:\Users\nati2\PycharmProjects\GarthicPhone\press_start.png'
 
@@ -89,6 +90,8 @@ def draw_screen(screen, clock):
 
     buttons_list = [DONE_BUTTON, CLEAR_BUTTON]
 
+    left, top, width, height = (192, 90, 896, 540)
+
     draw = False
     done = False
     active = True
@@ -116,6 +119,9 @@ def draw_screen(screen, clock):
                     pygame.draw.rect(screen, 'white', [192, 90, 896, 540])
                 if DONE_BUTTON.pressed:
                     done = not done
+                    if done:
+                        screenshot = pyscreeze.screenshot(region=(left, top, width + left, height + top))
+                        screenshot.save('screenshot.png')
 
         pygame.draw.rect(screen, active_color, [16, 566, 160, 64], 0, 7)
 
@@ -153,7 +159,9 @@ def first_sentence(screen, clock, my_socket):
                 if SEND_BUTTON.pressed:
                     if sentence != '' and sentence is not None:
                         my_socket.send(sentence.encode())
+                        print('i sent: ' + sentence)
                         sent = True
+                        SEND_BUTTON.pressed = False
             for box in input_boxes:
                 input_box.handle_event(event)
                 sentence = box.text
