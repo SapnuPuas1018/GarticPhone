@@ -24,19 +24,21 @@ def send_to_everyone(player_dict, data):
         sock.socket.send(data.encode())
 
 
-def how_many_ready(client_socket):
+def is_everyone_ready(client_socket, player_dict):
     global ready_count
     is_ready = client_socket.recv(MAX_PACKET).decode()
+    print(player_dict)
     with LOCK_COUNT:
         print('ready_count:' + str(ready_count))
         if is_ready == 'True':
             ready_count += 1
         else:
             ready_count -= 1
+        send_to_everyone(player_dict, f'{ready_count}/{len(player_dict)}')
 
 
 def receive_sentence(client_socket, player_dict, this_player):
-    print('kaka')
+    print('receive_sentence')
     global count
     while True:
         sentence = client_socket.recv(MAX_PACKET).decode()
@@ -62,19 +64,15 @@ def handle_connection(client_socket, player_dict, this_player):
     :return: None
     """
     try:
-
-        how_many_ready(client_socket)
-
+        ok = False
         while True:
+            is_everyone_ready(client_socket, player_dict)
             with LOCK_COUNT:
                 if 2 <= len(player_dict) == ready_count:
                     break
-        client_socket.send('game started'.encode())
 
         print('done')
-
         receive_sentence(client_socket, player_dict, this_player)
-        # checks if everyone has sent their sentence
         while True:
             with LOCK_COUNT:
                 if count == len(player_dict):
