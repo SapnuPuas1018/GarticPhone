@@ -24,7 +24,7 @@ def send_to_everyone(player_dict, data):
         sock.socket.send(data.encode())
 
 
-def is_everyone_ready(client_socket):
+def how_many_ready(client_socket):
     global ready_count
     is_ready = client_socket.recv(MAX_PACKET).decode()
     with LOCK_COUNT:
@@ -63,7 +63,7 @@ def handle_connection(client_socket, player_dict, this_player):
     """
     try:
 
-        is_everyone_ready(client_socket)
+        how_many_ready(client_socket)
 
         while True:
             with LOCK_COUNT:
