@@ -220,30 +220,18 @@ def lobby(screen, clock, my_socket):
                     my_socket.send(str(is_ready).encode())
                     print(is_ready)
 
+        try:
+            data = my_socket.recv(1024).decode()
+            if data == 'game started':
+                print('check')
+                active = False
+        except BlockingIOError:
+            pass
+
         screen.fill((52, 78, 91))
         for button in button_list:
             button.draw(screen)
 
-        try:
-            r = my_socket.recv(1024).decode()
-            print('i received: ' + r)
-            draw_text(r, FONT, (255, 255, 255), 160, 250, screen)
-
-            players_ready, total_players = r.split('/')
-            if 2 <= int(players_ready) == int(total_players):
-                print('check')
-                active = False
-            # data = my_socket.recv(1024).decode()
-            # if data == 'game started':
-            #     print('check')
-            #     active = False
-
-        except BlockingIOError:
-            pass
-        try:
-            draw_text(r, FONT, (255, 255, 255), 160, 250, screen)
-        except:
-            pass
         pygame.display.flip()
         clock.tick(REFRESH_RATE)
 
