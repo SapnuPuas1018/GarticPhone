@@ -1,3 +1,5 @@
+import base64
+
 import pygame
 import os
 import socket
@@ -17,6 +19,7 @@ WINDOW_WIDTH = 1280
 WINDOW_HEIGHT = 720
 SIZE = (WINDOW_WIDTH, WINDOW_HEIGHT)
 REFRESH_RATE = 165
+FILE_PATH_FOR_SCREENSHOTS = 'screenshot.jpg'
 # buttons
 
 # server
@@ -76,7 +79,9 @@ def color_palette(screen):
 def draw_screen(screen, clock):
     pygame.display.set_caption("Draw Circle at Cursor")
     screen.fill((52, 78, 91))
-    canvas = pygame.draw.rect(screen, 'white', [192, 90, 896, 540])
+    canvas = [192, 90, 896, 540]
+
+    pygame.draw.rect(screen, 'white', canvas)
 
     active_size = 15
     active_color = 'Black'
@@ -116,12 +121,18 @@ def draw_screen(screen, clock):
             if event.type == pygame.MOUSEBUTTONUP:
                 draw = False
                 if CLEAR_BUTTON.pressed:
-                    pygame.draw.rect(screen, 'white', [192, 90, 896, 540])
+                    if not done:
+                        pygame.draw.rect(screen, 'white', canvas)
                 if DONE_BUTTON.pressed:
                     done = not done
                     if done:
-                        screenshot = pyscreeze.screenshot(region=(left, top, width + left, height + top))
-                        screenshot.save('screenshot.png')
+                        DONE_BUTTON.set_text('Edit')
+                        sub = screen.subsurface(canvas)
+                        pygame.image.save(sub, 'screenshot.jpg')
+                        with open(FILE_PATH_FOR_SCREENSHOTS, 'rb') as image_file:
+                            base64_bytes = base64.b64encode(image_file.read())
+                    else:
+                        DONE_BUTTON.set_text('Done')
 
         pygame.draw.rect(screen, active_color, [16, 566, 160, 64], 0, 7)
 
