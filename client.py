@@ -197,7 +197,7 @@ def first_sentence(screen, clock, my_socket):
 
 
 def lobby(screen, clock, my_socket):
-    pygame.display.set_caption("Garthicc Phone")
+    pygame.display.set_caption("Gartic Phone")
     # READY_BUTTON = Button(image=None, pos=(100, 100),
     #                       text_input="READY", font=FONT, base_color="White", hovering_color="Black")
     READY_BUTTON = AnimatedButton('Ready', 200, 40, (100, 100), 8)
@@ -285,7 +285,7 @@ def join_screen(screen, clock, my_socket):
 
 
 def start_screen(screen, clock):
-    pygame.display.set_caption("Garthicc Phone")
+    pygame.display.set_caption("Gartic Phone")
     # img = pygame.image.load(PRESS_START_IMAGE_PATH)
     # screen.blit(img, (0, 0))
 
