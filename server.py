@@ -35,6 +35,22 @@ def how_many_ready(client_socket):
             ready_count -= 1
 
 
+def circular_switch(dict):
+    if not dict:  # If the dictionary is empty, do nothing
+        return
+
+    # Get the list of keys and values
+    keys = list(dict.keys())
+    values = list(dict.values())
+
+    # Rotate the values by one position to the right
+    rotated_values = [values[-1]] + values[:-1]
+
+    # Reassign the rotated values to the corresponding keys
+    for key, new_value in zip(keys, rotated_values):
+        dict[key] = new_value
+
+
 def receive_sentence(client_socket, player_dict, this_player):
     print('kaka')
     global count
@@ -52,6 +68,10 @@ def receive_sentence(client_socket, player_dict, this_player):
     print(sentence)
 
     print(player_dict)
+    print(str(player_dict[this_player]))
+
+    print(f'i sent: {player_dict[this_player]}')
+    client_socket.send(player_dict[this_player].encode())
 
 
 def handle_connection(client_socket, player_dict, this_player):
@@ -78,6 +98,8 @@ def handle_connection(client_socket, player_dict, this_player):
                 if count == len(player_dict):
                     break
         client_socket.send('idk'.encode())
+
+        circular_switch(player_dict)
 
     except socket.error as err:
         print('received socket exception - ' + str(err))

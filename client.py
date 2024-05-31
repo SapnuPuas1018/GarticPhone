@@ -76,12 +76,15 @@ def color_palette(screen):
     return color_list, rgb_list
 
 
-def draw_screen(screen, clock):
+def draw_screen(screen, clock, my_socket):
     pygame.display.set_caption("Draw Circle at Cursor")
     screen.fill((52, 78, 91))
     canvas = [192, 90, 896, 540]
 
     pygame.draw.rect(screen, 'white', canvas)
+    # sentence = my_socket.recv(1024).decode()
+
+
 
     active_size = 15
     active_color = 'Black'
@@ -145,6 +148,9 @@ def draw_screen(screen, clock):
             draw_circle_at_cursor(screen, active_size, active_color)
             screen.set_clip(None)
 
+
+        # if sentence is not None:
+        #     draw_text(sentence, FONT, 'white', 600, 10, screen)
         # Update the display
         pygame.display.flip()
         clock.tick(REFRESH_RATE)
@@ -331,7 +337,7 @@ def main():
             if join_screen(screen, clock, my_socket):
                 lobby(screen, clock, my_socket)
                 first_sentence(screen, clock, my_socket)
-                draw_screen(screen, clock)
+                draw_screen(screen, clock, my_socket)
     except socket.error as err:
         logging.error('received socket error on client socket' + str(err))
         print('received socket error on client socket' + str(err))
