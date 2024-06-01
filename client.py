@@ -24,7 +24,7 @@ FILE_PATH_FOR_SCREENSHOTS = 'screenshot.jpg'
 
 # server
 SERVER_IP = '127.0.0.1'
-SERVER_PORT = 5556
+SERVER_PORT = 5557
 
 PRESS_START_IMAGE_PATH = r'C:\Users\nati2\PycharmProjects\GarthicPhone\press_start.png'
 
@@ -77,14 +77,18 @@ def color_palette(screen):
 
 
 def draw_screen(screen, clock, my_socket):
+    print("requesting a sentence from server...")
+    my_socket.setblocking(True)
+    my_socket.send("give sentence".encode())
+
+    sentence = my_socket.recv(1024).decode()
+    print(f"my sentence is: {sentence}")
+
     pygame.display.set_caption("Draw Circle at Cursor")
     screen.fill((52, 78, 91))
     canvas = [192, 90, 896, 540]
 
     pygame.draw.rect(screen, 'white', canvas)
-    # sentence = my_socket.recv(1024).decode()
-
-
 
     active_size = 15
     active_color = 'Black'
@@ -168,6 +172,7 @@ def first_sentence(screen, clock, my_socket):
 
     sent = False
     active = True
+    recv_buffer = ''
     while active:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -176,7 +181,7 @@ def first_sentence(screen, clock, my_socket):
                 if SEND_BUTTON.pressed:
                     if sentence != '' and sentence is not None:
                         my_socket.send(sentence.encode())
-                        print('i sent: ' + sentence)
+                        print('I sent: ' + sentence)
                         sent = True
                         SEND_BUTTON.pressed = False
             for box in input_boxes:
@@ -194,12 +199,16 @@ def first_sentence(screen, clock, my_socket):
         # Update the display
         pygame.display.flip()
         try:
-            if my_socket.recv(1024).decode() == 'idk':
+            data = my_socket.recv(1024).decode()
+            if data == 'start drawing':
+                print("Server detected the sentences moving to game...")
                 active = False
         except BlockingIOError:
             pass
+
         clock.tick(REFRESH_RATE)
     return True
+
 
 
 def lobby(screen, clock, my_socket):
@@ -229,7 +238,7 @@ def lobby(screen, clock, my_socket):
         try:
             data = my_socket.recv(1024).decode()
             if data == 'game started':
-                print('check')
+                print('all players are ready')
                 active = False
         except BlockingIOError:
             pass

@@ -6,3 +6,6 @@ class Player:
         self.socket = socket
         self.address = address
         self.sentence = ''
+
+    def __repr__(self):
+        return f"<Player name: {self.name}>"
