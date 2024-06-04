@@ -4,6 +4,7 @@ import threading
 import time
 from threading import Thread
 from player import Player
+from protocol import *
 
 logging.basicConfig(filename='my_log_server.log', level=logging.DEBUG)
 
@@ -16,6 +17,7 @@ LOCK_COUNT = threading.Lock()
 player_dict = []
 ready_count = 0
 count = 0
+drawings_count = 0
 switches = 0
 
 
@@ -24,9 +26,9 @@ def send_to_everyone(player_dict, data):
         sock.socket.send(data.encode())
 
 
-def how_many_ready(client_socket):
+def wait_for_ready(client_socket):
     global ready_count
-    is_ready = client_socket.recv(MAX_PACKET).decode()
+    is_ready = recv(client_socket)
     with LOCK_COUNT:
         if is_ready == 'True':
             ready_count += 1
@@ -59,11 +61,26 @@ def circular_switch(dict):
     return dict
 
 
+def receive_drawing(client_socket, player_dict, this_player):
+    print('waiting to receive a drawing from player - ' + str(this_player))
+    global drawings_count
+    while True:
+        drawing = recv(client_socket)
+        if drawing != '' and drawing is not None:
+            print('found a drawing from player: ' + drawing + ', from: ' + str(this_player))
+            player_dict[this_player] = drawing
+            break
+
+    with LOCK_COUNT:
+        drawings_count += 1
+        print('ready drawings: ' + str(drawings_count))
+
+
 def receive_sentence(client_socket, player_dict, this_player):
     print('waiting to receive a sentence from player - ' + str(this_player))
     global count
     while True:
-        sentence = client_socket.recv(MAX_PACKET).decode()
+        sentence = recv(client_socket)
         if sentence != '' and sentence is not None:
             print('found a sentence from player: ' + sentence + ', from: ' + str(this_player))
             player_dict[this_player] = sentence
@@ -77,10 +94,10 @@ def receive_sentence(client_socket, player_dict, this_player):
 def send_sentence(client_socket, player_dict, this_player):
     print('waiting to player request for sentence - ' + str(this_player))
     while True:
-        request = client_socket.recv(MAX_PACKET).decode()
+        request = recv(client_socket)
         if request == "give sentence":
             print("sending the sentence: " + str(player_dict[this_player]) + " to player: " + str(this_player))
-            client_socket.send(player_dict[this_player].encode())
+            send(client_socket, player_dict[this_player])
             break
 
 
@@ -92,12 +109,12 @@ def handle_connection(client_socket, player_dict, this_player):
     :return: None
     """
     try:
-        how_many_ready(client_socket)
+        wait_for_ready(client_socket)
         while True:
             with LOCK_COUNT:
                 if 2 <= len(player_dict) == ready_count:
                     break
-        client_socket.send('game started'.encode())
+        send(client_socket, 'game started')
 
         receive_sentence(client_socket, player_dict, this_player)
         # checks if everyone has sent their sentence
@@ -106,16 +123,16 @@ def handle_connection(client_socket, player_dict, this_player):
                 if count == len(player_dict):
                     break
 
-        client_socket.send('start drawing'.encode())
+        send(client_socket, 'start drawing')
 
-        print("\n")
         print("circular switch check")
-        print(str(player_dict))
         player_dict = circular_switch(player_dict)
         print(str(player_dict))
 
         send_sentence(client_socket, player_dict, this_player)
-
+        print('receiving drawings')
+        player_dict_drawing = {}
+        receive_drawing(client_socket, player_dict_drawing, this_player)
     except socket.error as err:
         print('received socket exception - ' + str(err))
     finally:
@@ -138,7 +155,7 @@ def main():
         while True:
             client_socket, client_address = server_socket.accept()
             print('New connection received from ' + client_address[0] + ':' + str(client_address[1]))
-            name = client_socket.recv(MAX_PACKET).decode()
+            name = recv(client_socket)
             this_player = Player(name, client_socket, client_address)
             player_dict[this_player] = ''
             thread = Thread(target=handle_connection,

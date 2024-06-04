@@ -52,3 +52,7 @@ class AnimatedButton:
         else:
             self.dynamic_elecation = self.elevation
             self.top_color = 'aquamarine3'
+
+    def set_text(self, text):
+        self.text_surf = FONT.render(text, True, 'white')
+        self.text_rect = self.text_surf.get_rect(center=self.top_rect.center)

@@ -6,7 +6,7 @@ import socket
 import logging
 import time
 import pyscreeze
-
+from protocol import *
 
 from AnimatedButton import AnimatedButton
 from InputBox import InputBox
@@ -79,9 +79,9 @@ def color_palette(screen):
 def draw_screen(screen, clock, my_socket):
     print("requesting a sentence from server...")
     my_socket.setblocking(True)
-    my_socket.send("give sentence".encode())
+    send(my_socket, 'give sentence')
 
-    sentence = my_socket.recv(1024).decode()
+    sentence = recv(my_socket)
     print(f"my sentence is: {sentence}")
 
     pygame.display.set_caption("Draw Circle at Cursor")
@@ -137,7 +137,9 @@ def draw_screen(screen, clock, my_socket):
                         sub = screen.subsurface(canvas)
                         pygame.image.save(sub, 'screenshot.jpg')
                         with open(FILE_PATH_FOR_SCREENSHOTS, 'rb') as image_file:
-                            base64_bytes = base64.b64encode(image_file.read())
+                            drawing = base64.b64encode(image_file.read()).decode('utf-8')
+                            send(my_socket, drawing)
+
                     else:
                         DONE_BUTTON.set_text('Done')
 
@@ -152,9 +154,8 @@ def draw_screen(screen, clock, my_socket):
             draw_circle_at_cursor(screen, active_size, active_color)
             screen.set_clip(None)
 
-
-        # if sentence is not None:
-        #     draw_text(sentence, FONT, 'white', 600, 10, screen)
+        if sentence is not None:
+            draw_text(sentence, FONT, 'white', 600, 0, screen)
         # Update the display
         pygame.display.flip()
         clock.tick(REFRESH_RATE)
@@ -180,7 +181,7 @@ def first_sentence(screen, clock, my_socket):
             if event.type == pygame.MOUSEBUTTONUP:
                 if SEND_BUTTON.pressed:
                     if sentence != '' and sentence is not None:
-                        my_socket.send(sentence.encode())
+                        send(my_socket, sentence)
                         print('I sent: ' + sentence)
                         sent = True
                         SEND_BUTTON.pressed = False
@@ -199,7 +200,7 @@ def first_sentence(screen, clock, my_socket):
         # Update the display
         pygame.display.flip()
         try:
-            data = my_socket.recv(1024).decode()
+            data = recv(my_socket)
             if data == 'start drawing':
                 print("Server detected the sentences moving to game...")
                 active = False
@@ -208,7 +209,6 @@ def first_sentence(screen, clock, my_socket):
 
         clock.tick(REFRESH_RATE)
     return True
-
 
 
 def lobby(screen, clock, my_socket):
@@ -232,11 +232,11 @@ def lobby(screen, clock, my_socket):
                         READY_BUTTON.set_text('Unready')
                     else:
                         READY_BUTTON.set_text('Ready')
-                    my_socket.send(str(is_ready).encode())
+                    send(my_socket, str(is_ready))
                     print(is_ready)
 
         try:
-            data = my_socket.recv(1024).decode()
+            data = recv(my_socket)
             if data == 'game started':
                 print('all players are ready')
                 active = False
@@ -279,7 +279,7 @@ def join_screen(screen, clock, my_socket):
                             my_socket.connect(('127.0.0.1', SERVER_PORT))
                             logging.debug('connected')
                             active = False
-                            my_socket.send(user_name.encode())
+                            send(my_socket, user_name)
                         except socket.error as err:
                             logging.error('received socket error on client socket' + str(err))
                             print('received socket error on client socket' + str(err))
