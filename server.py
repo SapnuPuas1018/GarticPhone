@@ -17,6 +17,7 @@ LOCK_COUNT = threading.Lock()
 player_dict = []
 ready_count = 0
 count = 0
+send_sentence_count = 0
 drawings_count = 0
 switches = 0
 
@@ -67,7 +68,7 @@ def receive_drawing(client_socket, player_dict, this_player):
     while True:
         drawing = recv(client_socket)
         if drawing != '' and drawing is not None:
-            print('found a drawing from player: ' + drawing + ', from: ' + str(this_player))
+            print('found a drawing from player from: ' + str(this_player))
             player_dict[this_player] = drawing
             break
 
@@ -92,12 +93,25 @@ def receive_sentence(client_socket, player_dict, this_player):
 
 
 def send_sentence(client_socket, player_dict, this_player):
+    global send_sentence_count
     print('waiting to player request for sentence - ' + str(this_player))
     while True:
         request = recv(client_socket)
         if request == "give sentence":
             print("sending the sentence: " + str(player_dict[this_player]) + " to player: " + str(this_player))
             send(client_socket, player_dict[this_player])
+            break
+    with LOCK_COUNT:
+        send_sentence_count += 1
+        print('ready sentences: ' + str(count))
+
+def send_drawings(client_socket, player_dict_drawing, this_player):
+    print('waiting to player request for drawing - ' + str(this_player))
+    while True:
+        request = recv(client_socket)
+        if request == "give drawing":
+            print("sending the drawing to player: " + str(this_player))
+            send(client_socket, player_dict_drawing[this_player])
             break
 
 
@@ -118,10 +132,13 @@ def handle_connection(client_socket, player_dict, this_player):
 
         receive_sentence(client_socket, player_dict, this_player)
         # checks if everyone has sent their sentence
-        while True:
-            with LOCK_COUNT:
-                if count == len(player_dict):
-                    break
+
+        # while True:
+        #     with LOCK_COUNT:
+        #         if count == len(player_dict):
+        #             break
+        while count != len(player_dict):
+            pass
 
         send(client_socket, 'start drawing')
 
@@ -129,10 +146,30 @@ def handle_connection(client_socket, player_dict, this_player):
         player_dict = circular_switch(player_dict)
         print(str(player_dict))
 
+        global send_sentence_count
         send_sentence(client_socket, player_dict, this_player)
-        print('receiving drawings')
-        player_dict_drawing = {}
+        while len(player_dict) != send_sentence_count:
+            pass
+
+
+        print('waiting for receiving drawings')
+
+        player_dict_drawing = player_dict
         receive_drawing(client_socket, player_dict_drawing, this_player)
+
+        while len(player_dict_drawing) != drawings_count:
+            pass
+
+        print('received all drawings')
+
+        global switches
+        switches = 0
+        player_dict_drawing = circular_switch(player_dict_drawing)
+
+
+
+        print('done')
+
     except socket.error as err:
         print('received socket exception - ' + str(err))
     finally:

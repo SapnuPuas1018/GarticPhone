@@ -75,6 +75,9 @@ def color_palette(screen):
                 (0, 0, 0)]
     return color_list, rgb_list
 
+def show_image(screen, clock, my_socket):
+    pass
+
 
 def draw_screen(screen, clock, my_socket):
     print("requesting a sentence from server...")
@@ -97,10 +100,11 @@ def draw_screen(screen, clock, my_socket):
     color_list, rgb_list = color_palette(screen)
 
     DONE_BUTTON = AnimatedButton('Done', 150, 40, (938, 658), 8)
-
     CLEAR_BUTTON = AnimatedButton('Clear', 150, 40, (192, 658), 8)
 
     buttons_list = [DONE_BUTTON, CLEAR_BUTTON]
+
+    my_socket.setblocking(False)
 
     left, top, width, height = (192, 90, 896, 540)
 
@@ -125,8 +129,6 @@ def draw_screen(screen, clock, my_socket):
             if event.type == pygame.MOUSEBUTTONUP:
                 draw = False
 
-            if event.type == pygame.MOUSEBUTTONUP:
-                draw = False
                 if CLEAR_BUTTON.pressed:
                     if not done:
                         pygame.draw.rect(screen, 'white', canvas)
@@ -135,10 +137,18 @@ def draw_screen(screen, clock, my_socket):
                     if done:
                         DONE_BUTTON.set_text('Edit')
                         sub = screen.subsurface(canvas)
-                        pygame.image.save(sub, 'screenshot.jpg')
+                        pygame.image.save(sub, FILE_PATH_FOR_SCREENSHOTS)
                         with open(FILE_PATH_FOR_SCREENSHOTS, 'rb') as image_file:
                             drawing = base64.b64encode(image_file.read()).decode('utf-8')
-                            send(my_socket, drawing)
+
+                            # Ensure socket is non-blocking before sending
+                            my_socket.setblocking(False)
+                            try:
+                                send(my_socket, 'drawing')
+                                print('I sent a drawing')
+                            except socket.error as err:
+                                logging.error('Error sending drawing: ' + str(err))
+                                print('Error sending drawing: ' + str(err))
 
                     else:
                         DONE_BUTTON.set_text('Done')
@@ -267,7 +277,7 @@ def join_screen(screen, clock, my_socket):
     while active:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                return False
+                quit()
             for box in input_boxes:
                 input_box.handle_event(event)
                 user_name = box.text
@@ -313,7 +323,7 @@ def start_screen(screen, clock):
             if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                 active = False
             if event.type == pygame.QUIT:
-                return False
+                quit()
 
         # Update the display
         pygame.display.flip()
