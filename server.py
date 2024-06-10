@@ -123,6 +123,8 @@ def handle_connection(client_socket, player_dict, this_player):
     :return: None
     """
     try:
+        global switches
+        switches = 0
         wait_for_ready(client_socket)
         while True:
             if 2 <= len(player_dict) == ready_count:
@@ -139,6 +141,7 @@ def handle_connection(client_socket, player_dict, this_player):
 
         print('circular switch check')
         player_dict = circular_switch(player_dict)
+        switches = 0
         print(str(player_dict))
 
         global send_sentence_count
@@ -158,7 +161,6 @@ def handle_connection(client_socket, player_dict, this_player):
 
         send(client_socket, 'start guessing')
 
-        global switches
         player_dict_drawing = circular_switch(player_dict_drawing)
 
         send_drawings(client_socket, player_dict_drawing, this_player)
