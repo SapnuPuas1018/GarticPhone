@@ -27,7 +27,6 @@ def send(connected_socket, msg):
 def recv(connected_socket):
     """
     Receive a message from the connected socket.
-
     :param connected_socket: The connected socket to receive the message from.
     :type connected_socket: socket.socket
 

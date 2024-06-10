@@ -69,7 +69,9 @@ def receive_drawing(client_socket, player_dict, this_player):
         drawing = recv(client_socket)
         if drawing != '' and drawing is not None:
             print('found a drawing from player from: ' + str(this_player))
+            print(drawing)
             player_dict[this_player] = drawing
+            print(player_dict)
             break
 
     with LOCK_COUNT:
@@ -105,6 +107,7 @@ def send_sentence(client_socket, player_dict, this_player):
         send_sentence_count += 1
         print('ready sentences: ' + str(count))
 
+
 def send_drawings(client_socket, player_dict_drawing, this_player):
     print('waiting to player request for drawing - ' + str(this_player))
     while True:
@@ -133,16 +136,12 @@ def handle_connection(client_socket, player_dict, this_player):
         receive_sentence(client_socket, player_dict, this_player)
         # checks if everyone has sent their sentence
 
-        # while True:
-        #     with LOCK_COUNT:
-        #         if count == len(player_dict):
-        #             break
         while count != len(player_dict):
             pass
 
         send(client_socket, 'start drawing')
 
-        print("circular switch check")
+        print('circular switch check')
         player_dict = circular_switch(player_dict)
         print(str(player_dict))
 

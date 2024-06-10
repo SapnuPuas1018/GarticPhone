@@ -61,14 +61,17 @@ def brush_sizes(screen):
 
 
 def color_palette(screen):
-    blue = pygame.draw.rect(screen, (0, 0, 255), [720 - 35, 10, 25, 25])
-    red = pygame.draw.rect(screen, (255, 0, 0), [720 - 35, 35, 25, 25])
-    green = pygame.draw.rect(screen, (0, 255, 0), [720 - 60, 10, 25, 25])
-    yellow = pygame.draw.rect(screen, (255, 255, 0), [720 - 60, 35, 25, 25])
-    teal = pygame.draw.rect(screen, (0, 255, 255), [720 - 85, 10, 25, 25])
-    purple = pygame.draw.rect(screen, (255, 0, 255), [720 - 85, 35, 25, 25])
-    white = pygame.draw.rect(screen, (255, 255, 255), [720 - 110, 10, 25, 25])
-    black = pygame.draw.rect(screen, (0, 0, 0), [720 - 110, 35, 25, 25])
+    x = 136
+    y = 500
+    z = 475
+    blue = pygame.draw.rect(screen, (0, 0, 255), [x - 35, z, 25, 25])
+    red = pygame.draw.rect(screen, (255, 0, 0), [x - 35, y, 25, 25])
+    green = pygame.draw.rect(screen, (0, 255, 0), [x - 60, z, 25, 25])
+    yellow = pygame.draw.rect(screen, (255, 255, 0), [x - 60, y, 25, 25])
+    teal = pygame.draw.rect(screen, (0, 255, 255), [x - 85, z, 25, 25])
+    purple = pygame.draw.rect(screen, (255, 0, 255), [x - 85, y, 25, 25])
+    white = pygame.draw.rect(screen, (255, 255, 255), [x - 110, z, 25, 25])
+    black = pygame.draw.rect(screen, (0, 0, 0), [x - 110, y, 25, 25])
 
     color_list = [blue, red, green, yellow, teal, purple, white, black]
     rgb_list = [(0, 0, 255), (255, 0, 0), (0, 255, 0), (255, 255, 0), (0, 255, 255), (255, 0, 255), (255, 255, 255),
@@ -144,8 +147,10 @@ def draw_screen(screen, clock, my_socket):
                             # Ensure socket is non-blocking before sending
                             my_socket.setblocking(False)
                             try:
-                                send(my_socket, 'drawing')
+                                print('im sending a drawing')
+                                send(my_socket, drawing)
                                 print('I sent a drawing')
+                                print(drawing)
                             except socket.error as err:
                                 logging.error('Error sending drawing: ' + str(err))
                                 print('Error sending drawing: ' + str(err))
