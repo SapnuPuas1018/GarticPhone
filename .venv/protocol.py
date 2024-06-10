@@ -14,7 +14,6 @@ def send(connected_socket, msg):
     :return: None
     :rtype: None
     """
-    # Check if the last characters of the 'msg' string are a space
     msg = msg.strip()
 
     msg = str(len(msg)) + '!' + ' '.join(msg.split())
@@ -42,8 +41,9 @@ def recv(connected_socket):
 
     # Receive the message until the expected length is reached
     received_msg = ''
-    while len(received_msg) < length:
-        received_msg += connected_socket.recv(1).decode()
+    received_msg = connected_socket.recv(length).decode()
+    # while len(received_msg) < length:
+    #     received_msg += connected_socket.recv(1).decode()
 
     # Split the received message using '!!' as the separator
     return received_msg

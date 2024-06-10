@@ -30,12 +30,11 @@ def send_to_everyone(player_dict, data):
 def wait_for_ready(client_socket):
     global ready_count
     is_ready = recv(client_socket)
-    with LOCK_COUNT:
-        if is_ready == 'True':
-            ready_count += 1
-        else:
-            ready_count -= 1
-        print('ready players count:' + str(ready_count))
+    if is_ready == 'True':
+        ready_count += 1
+    else:
+        ready_count -= 1
+    print('ready players count:' + str(ready_count))
 
 
 def circular_switch(dict):
@@ -65,18 +64,16 @@ def circular_switch(dict):
 def receive_drawing(client_socket, player_dict, this_player):
     print('waiting to receive a drawing from player - ' + str(this_player))
     global drawings_count
-    while True:
-        drawing = recv(client_socket)
-        if drawing != '' and drawing is not None:
-            print('found a drawing from player from: ' + str(this_player))
-            print(drawing)
-            player_dict[this_player] = drawing
-            print(player_dict)
-            break
+    drawing = recv(client_socket)
+    if drawing != '' and drawing is not None:
+        print('found a drawing from player: ' + str(this_player))
+        print(drawing)
+        player_dict[this_player] = drawing
+        print(player_dict)
 
-    with LOCK_COUNT:
-        drawings_count += 1
-        print('ready drawings: ' + str(drawings_count))
+
+    drawings_count += 1
+    print('ready drawings: ' + str(drawings_count))
 
 
 def receive_sentence(client_socket, player_dict, this_player):
@@ -89,9 +86,9 @@ def receive_sentence(client_socket, player_dict, this_player):
             player_dict[this_player] = sentence
             break
 
-    with LOCK_COUNT:
-        count += 1
-        print('ready sentences: ' + str(count))
+
+    count += 1
+    print('ready sentences: ' + str(count))
 
 
 def send_sentence(client_socket, player_dict, this_player):
@@ -99,20 +96,20 @@ def send_sentence(client_socket, player_dict, this_player):
     print('waiting to player request for sentence - ' + str(this_player))
     while True:
         request = recv(client_socket)
-        if request == "give sentence":
+        if request == 'give sentence':
             print("sending the sentence: " + str(player_dict[this_player]) + " to player: " + str(this_player))
             send(client_socket, player_dict[this_player])
             break
-    with LOCK_COUNT:
-        send_sentence_count += 1
-        print('ready sentences: ' + str(count))
+
+    send_sentence_count += 1
+    print('ready sentences: ' + str(count))
 
 
 def send_drawings(client_socket, player_dict_drawing, this_player):
     print('waiting to player request for drawing - ' + str(this_player))
     while True:
         request = recv(client_socket)
-        if request == "give drawing":
+        if request == 'give drawing':
             print("sending the drawing to player: " + str(this_player))
             send(client_socket, player_dict_drawing[this_player])
             break
@@ -128,9 +125,8 @@ def handle_connection(client_socket, player_dict, this_player):
     try:
         wait_for_ready(client_socket)
         while True:
-            with LOCK_COUNT:
-                if 2 <= len(player_dict) == ready_count:
-                    break
+            if 2 <= len(player_dict) == ready_count:
+                break
         send(client_socket, 'game started')
 
         receive_sentence(client_socket, player_dict, this_player)
@@ -150,7 +146,6 @@ def handle_connection(client_socket, player_dict, this_player):
         while len(player_dict) != send_sentence_count:
             pass
 
-
         print('waiting for receiving drawings')
 
         player_dict_drawing = player_dict
@@ -161,12 +156,12 @@ def handle_connection(client_socket, player_dict, this_player):
 
         print('received all drawings')
 
+        send(client_socket, 'start guessing')
+
         global switches
-        switches = 0
         player_dict_drawing = circular_switch(player_dict_drawing)
 
-
-
+        send_drawings(client_socket, player_dict_drawing, this_player)
         print('done')
 
     except socket.error as err:

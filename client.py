@@ -1,4 +1,5 @@
 import base64
+import io
 
 import pygame
 import os
@@ -6,6 +7,9 @@ import socket
 import logging
 import time
 import pyscreeze
+from io import BytesIO
+import base64
+from PIL import Image
 from protocol import *
 
 from AnimatedButton import AnimatedButton
@@ -78,8 +82,69 @@ def color_palette(screen):
                 (0, 0, 0)]
     return color_list, rgb_list
 
+
+def string_to_image(base64_string):
+    image_data = base64.b64decode(base64_string)
+
+    # Create a PIL image from the binary data
+    image = Image.open(io.BytesIO(image_data))
+
+    # Convert Pillow image to Pygame surface
+    pygame_image = pygame.image.fromstring(image.tobytes(), image.size, image.mode)
+    return pygame_image
+
+
 def show_image(screen, clock, my_socket):
-    pass
+    print("requesting a drawing from server...")
+    my_socket.setblocking(True)
+    send(my_socket, 'give drawing')
+    print('asking for a drawing')
+
+    drawing = recv(my_socket)
+    print('i received a drawing')
+
+    SEND_BUTTON = AnimatedButton('Send', 150, 40, (938, 658), 8)
+    screen.fill((52, 78, 91))
+
+    my_socket.setblocking(False)
+
+    sentence = ''
+    input_box = InputBox(560, 680, 140, 32)
+    input_boxes = [input_box]
+
+    sent = False
+    active = True
+    while active:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                quit()
+            if event.type == pygame.MOUSEBUTTONUP:
+                if SEND_BUTTON.pressed:
+                    if sentence != '' and sentence is not None:
+                        send(my_socket, sentence)
+                        print('I sent: ' + sentence)
+                        sent = True
+                        SEND_BUTTON.pressed = False
+            for box in input_boxes:
+                input_box.handle_event(event)
+                sentence = box.text
+            screen.fill((52, 78, 91))
+            for box in input_boxes:
+                box.update()
+                box.draw(screen)
+            if not sent:
+                SEND_BUTTON.draw(screen)
+            # Update the display
+            screen.blit(string_to_image(drawing), (192, 90))
+            # try:
+            #     data = recv(my_socket)
+            #
+            # except BlockingIOError:
+            #     pass
+
+            # Update the display
+            pygame.display.flip()
+            clock.tick(REFRESH_RATE)
 
 
 def draw_screen(screen, clock, my_socket):
@@ -171,6 +236,14 @@ def draw_screen(screen, clock, my_socket):
 
         if sentence is not None:
             draw_text(sentence, FONT, 'white', 600, 0, screen)
+
+        try:
+            data = recv(my_socket)
+            if data == 'start guessing':
+                print("Server detected all drawings, moving on...")
+                active = False
+        except BlockingIOError:
+            pass
         # Update the display
         pygame.display.flip()
         clock.tick(REFRESH_RATE)
@@ -214,6 +287,14 @@ def first_sentence(screen, clock, my_socket):
             SEND_BUTTON.draw(screen)
         # Update the display
         pygame.display.flip()
+        try:
+            data = recv(my_socket)
+            if data == 'start drawing':
+                print("Server detected the sentences moving to game...")
+                active = False
+        except BlockingIOError:
+            pass
+
         try:
             data = recv(my_socket)
             if data == 'start drawing':
@@ -362,6 +443,8 @@ def main():
                 lobby(screen, clock, my_socket)
                 first_sentence(screen, clock, my_socket)
                 draw_screen(screen, clock, my_socket)
+                print('hi im here')
+                show_image(screen, clock, my_socket)
     except socket.error as err:
         logging.error('received socket error on client socket' + str(err))
         print('received socket error on client socket' + str(err))
