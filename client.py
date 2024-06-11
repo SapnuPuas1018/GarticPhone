@@ -333,8 +333,11 @@ def lobby(screen, clock, my_socket):
 
         try:
             data = recv(my_socket)
-            if data == 'game started':
-                print('all players are ready')
+            print('i received: ' + data)
+            draw_text(data, FONT, (255, 255, 255), 160, 250, screen)    # Doesn't work for some reason
+            players_ready, total_players = data.split('/')
+            if 2 <= int(players_ready) == int(total_players):
+                print('all players are ready, moving to the sentences screen')
                 active = False
         except BlockingIOError:
             pass

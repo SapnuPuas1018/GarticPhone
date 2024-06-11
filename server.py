@@ -24,17 +24,20 @@ switches = 0
 
 def send_to_everyone(player_dict, data):
     for sock in player_dict:
-        sock.socket.send(data.encode())
+        send(sock.socket, data)
 
 
-def wait_for_ready(client_socket):
+def wait_for_ready(client_socket, player_dict):
     global ready_count
     is_ready = recv(client_socket)
     if is_ready == 'True':
         ready_count += 1
     else:
         ready_count -= 1
+    print(ready_count)
     print('ready players count:' + str(ready_count))
+    print(f'i sent: {ready_count}/{len(player_dict)}')
+    send_to_everyone(player_dict, f'{ready_count}/{len(player_dict)}')
 
 
 def circular_switch(dict):
@@ -71,7 +74,6 @@ def receive_drawing(client_socket, player_dict, this_player):
         player_dict[this_player] = drawing
         print(player_dict)
 
-
     drawings_count += 1
     print('ready drawings: ' + str(drawings_count))
 
@@ -85,7 +87,6 @@ def receive_sentence(client_socket, player_dict, this_player):
             print('found a sentence from player: ' + sentence + ', from: ' + str(this_player))
             player_dict[this_player] = sentence
             break
-
 
     count += 1
     print('ready sentences: ' + str(count))
@@ -125,11 +126,11 @@ def handle_connection(client_socket, player_dict, this_player):
     try:
         global switches
         switches = 0
-        wait_for_ready(client_socket)
         while True:
+            wait_for_ready(client_socket, player_dict)
             if 2 <= len(player_dict) == ready_count:
                 break
-        send(client_socket, 'game started')
+        print('game started')
 
         receive_sentence(client_socket, player_dict, this_player)
         # checks if everyone has sent their sentence
