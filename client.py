@@ -313,6 +313,10 @@ def lobby(screen, clock, my_socket):
     #                       text_input="READY", font=FONT, base_color="White", hovering_color="Black")
     READY_BUTTON = AnimatedButton('Ready', 200, 40, (100, 100), 8)
     button_list = [READY_BUTTON]
+
+    data = recv(my_socket)
+    players_ready, total_players = data.split('/')
+
     my_socket.setblocking(False)
     is_ready = False
     active = True
@@ -334,7 +338,7 @@ def lobby(screen, clock, my_socket):
         try:
             data = recv(my_socket)
             print('i received: ' + data)
-            draw_text(data, FONT, (255, 255, 255), 160, 250, screen)    # Doesn't work for some reason
+            # draw_text('data', FONT, (255, 255, 255), 160, 250, screen)
             players_ready, total_players = data.split('/')
             if 2 <= int(players_ready) == int(total_players):
                 print('all players are ready, moving to the sentences screen')
@@ -343,6 +347,7 @@ def lobby(screen, clock, my_socket):
             pass
 
         screen.fill((52, 78, 91))
+        draw_text('players ready: ' + players_ready + '/' + total_players, FONT, (255, 255, 255), 160, 360, screen)
         for button in button_list:
             button.draw(screen)
 
@@ -444,9 +449,9 @@ def main():
         if start_screen(screen, clock):
             if join_screen(screen, clock, my_socket):
                 lobby(screen, clock, my_socket)
+
                 first_sentence(screen, clock, my_socket)
                 draw_screen(screen, clock, my_socket)
-                print('hi im here')
                 show_image(screen, clock, my_socket)
     except socket.error as err:
         logging.error('received socket error on client socket' + str(err))

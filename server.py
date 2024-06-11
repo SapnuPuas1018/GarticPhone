@@ -126,6 +126,7 @@ def handle_connection(client_socket, player_dict, this_player):
     try:
         global switches
         switches = 0
+        send(client_socket, f'{ready_count}/{len(player_dict)}')
         while True:
             wait_for_ready(client_socket, player_dict)
             if 2 <= len(player_dict) == ready_count:
