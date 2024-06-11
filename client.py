@@ -356,7 +356,7 @@ def lobby(screen, clock, my_socket):
 
         pygame.display.flip()
         clock.tick(REFRESH_RATE)
-
+    return int(total_players)
 
 def join_screen(screen, clock, my_socket):
     pygame.display.set_caption("join screen")
@@ -451,11 +451,12 @@ def main():
 
         if start_screen(screen, clock):
             if join_screen(screen, clock, my_socket):
-                lobby(screen, clock, my_socket)
+                total_players = lobby(screen, clock, my_socket)
 
                 first_sentence(screen, clock, my_socket)
-                draw_screen(screen, clock, my_socket)
-                show_image(screen, clock, my_socket)
+                for i in range(total_players // 2):
+                    draw_screen(screen, clock, my_socket)
+                    show_image(screen, clock, my_socket)
     except socket.error as err:
         logging.error('received socket error on client socket' + str(err))
         print('received socket error on client socket' + str(err))
