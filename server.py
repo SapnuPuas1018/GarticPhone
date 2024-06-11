@@ -47,14 +47,15 @@ def wait_for_ready(client_socket, player_dict):
 
 
 def circular_switch(dict):
+    print('circular switch')
     global switches
     switches += 1
 
-    if switches != 1:
-        return dict
-
     if not dict:  # If the dictionary is empty, do nothing
         return
+
+    if switches % len(dict) != 0:
+        return dict
 
     # Get the list of keys and values
     keys = list(dict.keys())
@@ -131,7 +132,6 @@ def handle_connection(client_socket, player_dict, this_player):
     """
     try:
         global switches
-        switches = 0
         send(client_socket, f'{ready_count}/{len(player_dict)}')
 
         wait_for_ready(client_socket, player_dict)
@@ -145,9 +145,7 @@ def handle_connection(client_socket, player_dict, this_player):
 
         send(client_socket, 'start drawing')
 
-        print('circular switch check')
         player_dict = circular_switch(player_dict)
-        switches = 0
         print(str(player_dict))
 
         global send_sentence_count
