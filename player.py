@@ -5,6 +5,7 @@ class Player:
         self.name = name
         self.socket = socket
         self.address = address
+        self.is_ready = False
         self.sentence = ''
         self.drawing = ''
 

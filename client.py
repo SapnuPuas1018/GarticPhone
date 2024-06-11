@@ -1,5 +1,6 @@
 import base64
 import io
+import json
 
 import pygame
 import os
@@ -342,12 +343,14 @@ def lobby(screen, clock, my_socket):
             players_ready, total_players = data.split('/')
             if 2 <= int(players_ready) == int(total_players):
                 print('all players are ready, moving to the sentences screen')
+                send(my_socket, 'all players are ready')
                 active = False
         except BlockingIOError:
             pass
 
         screen.fill((52, 78, 91))
         draw_text('players ready: ' + players_ready + '/' + total_players, FONT, (255, 255, 255), 160, 360, screen)
+        # draw_text('players: ' + players, FONT, (255, 255, 255), 160, 460, screen)
         for button in button_list:
             button.draw(screen)
 

@@ -5,6 +5,7 @@ import time
 from threading import Thread
 from player import Player
 from protocol import *
+import json
 
 logging.basicConfig(filename='my_log_server.log', level=logging.DEBUG)
 
@@ -29,15 +30,20 @@ def send_to_everyone(player_dict, data):
 
 def wait_for_ready(client_socket, player_dict):
     global ready_count
-    is_ready = recv(client_socket)
-    if is_ready == 'True':
-        ready_count += 1
-    else:
-        ready_count -= 1
-    print(ready_count)
-    print('ready players count:' + str(ready_count))
-    print(f'i sent: {ready_count}/{len(player_dict)}')
-    send_to_everyone(player_dict, f'{ready_count}/{len(player_dict)}')
+    while len(player_dict) != ready_count or len(player_dict) < 2:
+
+        is_ready = recv(client_socket)
+        if is_ready == 'all players are ready':
+            break
+
+        if is_ready == 'True':
+            ready_count += 1
+        else:
+            ready_count -= 1
+        print(ready_count)
+        print('ready players count:' + str(ready_count))
+        print(f'i sent: {ready_count}/{len(player_dict)}')
+        send_to_everyone(player_dict, f'{ready_count}/{len(player_dict)}')
 
 
 def circular_switch(dict):
@@ -83,7 +89,7 @@ def receive_sentence(client_socket, player_dict, this_player):
     global count
     while True:
         sentence = recv(client_socket)
-        if sentence != '' and sentence is not None:
+        if sentence != '' and sentence is not None and sentence != 'all players are ready':
             print('found a sentence from player: ' + sentence + ', from: ' + str(this_player))
             player_dict[this_player] = sentence
             break
@@ -127,10 +133,8 @@ def handle_connection(client_socket, player_dict, this_player):
         global switches
         switches = 0
         send(client_socket, f'{ready_count}/{len(player_dict)}')
-        while True:
-            wait_for_ready(client_socket, player_dict)
-            if 2 <= len(player_dict) == ready_count:
-                break
+
+        wait_for_ready(client_socket, player_dict)
         print('game started')
 
         receive_sentence(client_socket, player_dict, this_player)
@@ -193,6 +197,7 @@ def main():
             name = recv(client_socket)
             this_player = Player(name, client_socket, client_address)
             player_dict[this_player] = ''
+
             thread = Thread(target=handle_connection,
                             args=(client_socket, player_dict, this_player))
             thread.start()
