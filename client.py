@@ -16,7 +16,6 @@ from protocol import *
 from AnimatedButton import AnimatedButton
 from InputBox import InputBox
 
-
 # Constants
 FONT = pygame.font.SysFont('arialblack', 32)
 # screen
@@ -142,7 +141,13 @@ def show_image(screen, clock, my_socket):
             #
             # except BlockingIOError:
             #     pass
-
+            try:
+                data = recv(my_socket)
+                if data == 'start drawing':
+                    print("Server detected the sentences moving to game...")
+                    active = False
+            except BlockingIOError:
+                pass
             # Update the display
             pygame.display.flip()
             clock.tick(REFRESH_RATE)
@@ -288,13 +293,6 @@ def first_sentence(screen, clock, my_socket):
             SEND_BUTTON.draw(screen)
         # Update the display
         pygame.display.flip()
-        try:
-            data = recv(my_socket)
-            if data == 'start drawing':
-                print("Server detected the sentences moving to game...")
-                active = False
-        except BlockingIOError:
-            pass
 
         try:
             data = recv(my_socket)
@@ -357,6 +355,7 @@ def lobby(screen, clock, my_socket):
         pygame.display.flip()
         clock.tick(REFRESH_RATE)
     return int(total_players)
+
 
 def join_screen(screen, clock, my_socket):
     pygame.display.set_caption("join screen")
@@ -454,9 +453,14 @@ def main():
                 total_players = lobby(screen, clock, my_socket)
 
                 first_sentence(screen, clock, my_socket)
-                for i in range(total_players // 2):
+                i = 0
+                while i < total_players - 1:
                     draw_screen(screen, clock, my_socket)
+                    i += 1
+                    if i == total_players:
+                        break
                     show_image(screen, clock, my_socket)
+                    i += 1
     except socket.error as err:
         logging.error('received socket error on client socket' + str(err))
         print('received socket error on client socket' + str(err))

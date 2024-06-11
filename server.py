@@ -17,9 +17,12 @@ LOCK_COUNT = threading.Lock()
 
 player_dict = []
 ready_count = 0
+
 count = 0
 send_sentence_count = 0
+
 drawings_count = 0
+send_drawings_count = 0
 switches = 0
 
 
@@ -132,42 +135,66 @@ def handle_connection(client_socket, player_dict, this_player):
     """
     try:
         global switches
+        global count
+        # ----------------------------------------------------------------------players ready
         send(client_socket, f'{ready_count}/{len(player_dict)}')
 
         wait_for_ready(client_socket, player_dict)
         print('game started')
 
+        # ----------------------------------------------------------------------first sentence
         receive_sentence(client_socket, player_dict, this_player)
         # checks if everyone has sent their sentence
 
         while count != len(player_dict):
             pass
+        print('received all sentences')
+        count = 0
+        i = 0
+        while i < len(player_dict) - 1:
+            print(f'hi im here for the {i+1} time')
+            # ----------------------------------------------------------------------drawing
+            send(client_socket, 'start drawing')
 
-        send(client_socket, 'start drawing')
+            player_dict = circular_switch(player_dict)
+            print(str(player_dict))
 
-        player_dict = circular_switch(player_dict)
-        print(str(player_dict))
+            global send_sentence_count
+            send_sentence_count = 0
+            send_sentence(client_socket, player_dict, this_player)
+            while len(player_dict) != send_sentence_count:
+                pass
 
-        global send_sentence_count
-        send_sentence(client_socket, player_dict, this_player)
-        while len(player_dict) != send_sentence_count:
-            pass
+            print('waiting for receiving drawings')
 
-        print('waiting for receiving drawings')
+            player_dict_drawing = player_dict
+            receive_drawing(client_socket, player_dict_drawing, this_player)
 
-        player_dict_drawing = player_dict
-        receive_drawing(client_socket, player_dict_drawing, this_player)
+            while len(player_dict_drawing) != drawings_count:
+                pass
+            print('received all drawings')
+            i += 1
+            # ---------------------------------------------------------------------guessing / show image
+            send(client_socket, 'start guessing')
 
-        while len(player_dict_drawing) != drawings_count:
-            pass
+            player_dict_drawing = circular_switch(player_dict_drawing)
+            print(str(player_dict))
 
-        print('received all drawings')
+            global send_drawings_count
+            send_drawings_count = 0
+            send_drawings(client_socket, player_dict_drawing, this_player)
+            while send_drawings_count != len(player_dict_drawing):
+                pass
 
-        send(client_socket, 'start guessing')
+            print('waiting for receiving sentences')
 
-        player_dict_drawing = circular_switch(player_dict_drawing)
+            player_dict = player_dict_drawing
+            receive_sentence(client_socket, player_dict, this_player)
 
-        send_drawings(client_socket, player_dict_drawing, this_player)
+            while len(player_dict) != count:
+                pass
+            print('received all sentences')
+            i += 1
         print('done')
 
     except socket.error as err:
