@@ -3,11 +3,13 @@ import socket
 
 def send(connected_socket, msg):
     """
-    Send a message over the connected socket.
+    Send a message through a connected socket after formatting it.
 
-    :param connected_socket: The connected socket to send the message through.
+    The function trims the message, prefixes it with its length followed by '!',
+    and sends it through the given socket.
+
+    :param connected_socket: The connected socket through which the message is to be sent.
     :type connected_socket: socket.socket
-
     :param msg: The message to be sent.
     :type msg: str
 
@@ -25,12 +27,16 @@ def send(connected_socket, msg):
 
 def recv(connected_socket):
     """
-    Receive a message from the connected socket.
-    :param connected_socket: The connected socket to receive the message from.
+    Receive a message from a connected socket after extracting its length.
+
+    The function reads the length of the message, then receives and decodes
+    the message of the expected length from the given socket.
+
+    :param connected_socket: The connected socket from which the message is to be received.
     :type connected_socket: socket.socket
 
-    :return: A list containing the split components of the received message.
-    :rtype: list[str]
+    :return: The received message.
+    :rtype: str
     """
     length = ''
     while '!' not in length:

@@ -157,11 +157,11 @@ def handle_connection(client_socket, player_dict, this_player):
         while sentences_count != 0 and sentences_count % len(player_dict) != 0:
             pass
         print('received all sentences')
-
+        send(client_socket, 'start drawing')
         i = 0
         while i < len(player_dict) - 1:
             # ----------------------------------------------------------------------drawing
-            send(client_socket, 'start drawing')
+
             player_dict = circular_switch(player_dict)
             print(str(player_dict))
 
@@ -177,11 +177,13 @@ def handle_connection(client_socket, player_dict, this_player):
             player_dict_drawing = player_dict
             receive_drawing(client_socket, player_dict_drawing, this_player)
 
-            while len(player_dict_drawing) != drawings_count:
+            while drawings_count != 0 and drawings_count % len(player_dict_drawing):
                 pass
 
             print('received all drawings')
-            i+=1
+            i += 1
+            if i == len(player_dict) - 1:
+                break
             # ---------------------------------------------------------------------guessing / show image
             send(client_socket, 'start guessing')
 
@@ -207,6 +209,8 @@ def handle_connection(client_socket, player_dict, this_player):
 
             print('received all sentences')
             i += 1
+            send(client_socket, 'start drawing')
+
         print('done')
 
     except socket.error as err:
