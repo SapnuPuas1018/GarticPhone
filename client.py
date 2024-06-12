@@ -141,13 +141,7 @@ def show_image(screen, clock, my_socket):
             #
             # except BlockingIOError:
             #     pass
-            try:
-                data = recv(my_socket)
-                if data == 'start drawing':
-                    print("Server detected the sentences moving to game...")
-                    active = False
-            except BlockingIOError:
-                pass
+
             # Update the display
             pygame.display.flip()
             clock.tick(REFRESH_RATE)
@@ -293,6 +287,13 @@ def first_sentence(screen, clock, my_socket):
             SEND_BUTTON.draw(screen)
         # Update the display
         pygame.display.flip()
+        try:
+            data = recv(my_socket)
+            if data == 'start drawing':
+                print("Server detected the sentences moving to game...")
+                active = False
+        except BlockingIOError:
+            pass
 
         try:
             data = recv(my_socket)
@@ -457,10 +458,9 @@ def main():
                 while i < total_players - 1:
                     draw_screen(screen, clock, my_socket)
                     i += 1
-                    if i == total_players:
+                    if i == total_players - 1:
                         break
                     show_image(screen, clock, my_socket)
-                    i += 1
     except socket.error as err:
         logging.error('received socket error on client socket' + str(err))
         print('received socket error on client socket' + str(err))
