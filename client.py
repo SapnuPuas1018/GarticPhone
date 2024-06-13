@@ -120,7 +120,7 @@ def show_image(screen, clock, my_socket):
                 quit()
             if event.type == pygame.MOUSEBUTTONUP:
                 if SEND_BUTTON.pressed:
-                    if sentence != '' and sentence is not None:
+                    if sentence != '' and sentence is not None and sentence != 'all players are ready':
                         send(my_socket, sentence)
                         print('I sent: ' + sentence)
                         sent = True
@@ -269,7 +269,7 @@ def first_sentence(screen, clock, my_socket):
                 return False
             if event.type == pygame.MOUSEBUTTONUP:
                 if SEND_BUTTON.pressed:
-                    if sentence != '' and sentence is not None:
+                    if sentence != '' and sentence != 'all players are ready' and sentence is not None:
                         send(my_socket, sentence)
                         print('I sent: ' + sentence)
                         sent = True
@@ -462,10 +462,7 @@ def main():
                     if i == total_players - 1:
                         break
                     show_image(screen, clock, my_socket)
-
-                while True:
-                    screen.fill((0, 0, 0))
-                    pygame.display.flip()
+                    i += 1
     except socket.error as err:
         logging.error('received socket error on client socket' + str(err))
         print('received socket error on client socket' + str(err))

@@ -18,6 +18,7 @@ LOCK_COUNT = threading.Lock()
 player_dict = []
 
 ready_count = 0
+game_started = False
 
 sentences_count = 0
 send_sentence_count = 0
@@ -139,7 +140,7 @@ def handle_connection(client_socket, player_dict, this_player):
     :param client_address: the remote address
     :return: None
     """
-
+    global game_started
     try:
         # ----------------------------------------------------------------------players ready
         global switches
@@ -147,7 +148,7 @@ def handle_connection(client_socket, player_dict, this_player):
 
         wait_for_ready(client_socket, player_dict)
         print('game started')
-
+        game_started = True
         # ----------------------------------------------------------------------first sentence
         receive_sentence(client_socket, player_dict, this_player)
         # checks if everyone has sent their sentence
@@ -216,8 +217,9 @@ def handle_connection(client_socket, player_dict, this_player):
     except socket.error as err:
         print('received socket exception - ' + str(err))
     finally:
+        print('closing client socket')
         client_socket.close()
-
+        print('client socket closed')
 
 def main():
     """
@@ -235,6 +237,7 @@ def main():
         while True:
             client_socket, client_address = server_socket.accept()
             print('New connection received from ' + client_address[0] + ':' + str(client_address[1]))
+
             name = recv(client_socket)
             this_player = Player(name, client_socket, client_address)
             player_dict[this_player] = ''
@@ -248,7 +251,9 @@ def main():
         print('received socket error on client socket' + str(err))
 
     finally:
+        print('closing server socket')
         server_socket.close()
+        print('client socket closed')
 
 
 if __name__ == '__main__':
