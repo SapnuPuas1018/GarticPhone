@@ -1,14 +1,7 @@
-import base64
 import io
-import json
-
 import pygame
 import os
-import socket
 import logging
-import time
-import pyscreeze
-from io import BytesIO
 import base64
 from PIL import Image
 from protocol import *
@@ -30,17 +23,46 @@ FILE_PATH_FOR_SCREENSHOTS = 'screenshot.jpg'
 SERVER_IP = '127.0.0.1'
 SERVER_PORT = 5557
 
-PRESS_START_IMAGE_PATH = r'C:\Users\nati2\PycharmProjects\GarthicPhone\press_start.png'
 
 logging.basicConfig(filename='my_log_client.log', level=logging.DEBUG)
 
 
 def draw_text(text, font, text_color, x, y, screen):
+    """
+        Draws text on the screen.
+
+        :param text: The text to be drawn.
+        :type text: str
+        :param font: The font to be used.
+        :type font: pygame.font.Font
+        :param text_color: The color of the text.
+        :type text_color: tuple
+        :param x: The x-coordinate for the text.
+        :type x: int
+        :param y: The y-coordinate for the text.
+        :type y: int
+        :param screen: The screen on which to draw the text.
+        :type screen: pygame.Surface
+        :return: None
+        :rtype: None
+    """
     img = font.render(text, True, text_color)
     screen.blit(img, (x, y))
 
 
 def draw_circle_at_cursor(screen, radius, color):
+    """
+        Draws a circle at the current cursor position.
+
+        :param screen: The screen on which to draw the circle.
+        :type screen: pygame.Surface
+        :param radius: The radius of the circle.
+        :type radius: int
+        :param color: The color of the circle.
+        :type color: tuple
+        :return: None
+        :rtype: None
+    """
     # Get the current cursor position
     pos = pygame.mouse.get_pos()
     # Draw the circle at the cursor position
@@ -48,6 +70,14 @@ def draw_circle_at_cursor(screen, radius, color):
 
 
 def brush_sizes(screen):
+    """
+        Draws brush size options on the screen.
+
+        :param screen: The screen on which to draw the brush sizes.
+        :type screen: pygame.Surface
+        :return: List of rectangles representing brush size options.
+        :rtype: list[pygame.Rect]
+    """
     xl_brush = pygame.draw.rect(screen, 'black', [10, 10, 50, 50])
     pygame.draw.circle(screen, 'white', (35, 35), 20)
 
@@ -65,6 +95,14 @@ def brush_sizes(screen):
 
 
 def color_palette(screen):
+    """
+        Draws a color palette on the screen.
+
+        :param screen: The screen on which to draw the color palette.
+        :type screen: pygame.Surface
+        :return: Tuple containing a list of rectangles for colors and their RGB values.
+        :rtype: tuple[list[pygame.Rect], list[tuple]]
+    """
     x = 136
     y = 500
     z = 475
@@ -84,6 +122,14 @@ def color_palette(screen):
 
 
 def string_to_image(base64_string):
+    """
+        Converts a base64 encoded string to a Pygame image.
+
+        :param base64_string: The base64 encoded string.
+        :type base64_string: str
+        :return: The converted Pygame image.
+        :rtype: pygame.Surface
+    """
     image_data = base64.b64decode(base64_string)
 
     # Create a PIL image from the binary data
@@ -95,15 +141,26 @@ def string_to_image(base64_string):
 
 
 def show_image(screen, clock, my_socket):
+    """
+       Displays an image received from the server and handles user input for guessing.
+
+       :param screen: The screen on which to display the image.
+       :type screen: pygame.Surface
+       :param clock: The Pygame clock object.
+       :type clock: pygame.time.Clock
+       :param my_socket: The socket for communication with the server.
+       :type my_socket: socket.socket
+       :return: None
+       :rtype: None
+    """
     print("requesting a drawing from server...")
+    logging.debug("requesting a drawing from server...")
     my_socket.setblocking(True)
     send(my_socket, 'give drawing')
-    print('asking for a drawing')
 
     drawing = recv(my_socket)
-    print('i received a drawing')
 
-    SEND_BUTTON = AnimatedButton('Send', 150, 40, (938, 658), 8)
+    send_button = AnimatedButton('Send', 150, 40, (938, 658), 8)
     screen.fill((52, 78, 91))
 
     my_socket.setblocking(False)
@@ -119,12 +176,11 @@ def show_image(screen, clock, my_socket):
             if event.type == pygame.QUIT:
                 quit()
             if event.type == pygame.MOUSEBUTTONUP:
-                if SEND_BUTTON.pressed:
+                if send_button.pressed:
                     if sentence != '' and sentence is not None and sentence != 'all players are ready':
                         send(my_socket, sentence)
-                        print('I sent: ' + sentence)
                         sent = True
-                        SEND_BUTTON.pressed = False
+                        send_button.pressed = False
             for box in input_boxes:
                 input_box.handle_event(event)
                 sentence = box.text
@@ -133,7 +189,7 @@ def show_image(screen, clock, my_socket):
                 box.update()
                 box.draw(screen)
             if not sent:
-                SEND_BUTTON.draw(screen)
+                send_button.draw(screen)
             # Update the display
             screen.blit(string_to_image(drawing), (192, 90))
             try:
@@ -149,12 +205,26 @@ def show_image(screen, clock, my_socket):
 
 
 def draw_screen(screen, clock, my_socket):
+    """
+        Displays a drawing screen and handles user input for drawing.
+
+        :param screen: The screen on which to display the drawing interface.
+        :type screen: pygame.Surface
+        :param clock: The Pygame clock object.
+        :type clock: pygame.time.Clock
+        :param my_socket: The socket for communication with the server.
+        :type my_socket: socket.socket
+        :return: None
+        :rtype: None
+    """
     print("requesting a sentence from server...")
+    logging.debug("requesting a sentence from server...")
     my_socket.setblocking(True)
     send(my_socket, 'give sentence')
 
     sentence = recv(my_socket)
     print(f"my sentence is: {sentence}")
+    logging.debug(f"my sentence is: {sentence}")
 
     pygame.display.set_caption("Draw Circle at Cursor")
     screen.fill((52, 78, 91))
@@ -168,14 +238,12 @@ def draw_screen(screen, clock, my_socket):
     brush_list = brush_sizes(screen)
     color_list, rgb_list = color_palette(screen)
 
-    DONE_BUTTON = AnimatedButton('Done', 150, 40, (938, 658), 8)
-    CLEAR_BUTTON = AnimatedButton('Clear', 150, 40, (192, 658), 8)
+    done_button = AnimatedButton('Done', 150, 40, (938, 658), 8)
+    clear_button = AnimatedButton('Clear', 150, 40, (192, 658), 8)
 
-    buttons_list = [DONE_BUTTON, CLEAR_BUTTON]
+    buttons_list = [done_button, clear_button]
 
     my_socket.setblocking(False)
-
-    left, top, width, height = (192, 90, 896, 540)
 
     draw = False
     done = False
@@ -198,13 +266,13 @@ def draw_screen(screen, clock, my_socket):
             if event.type == pygame.MOUSEBUTTONUP:
                 draw = False
 
-                if CLEAR_BUTTON.pressed:
+                if clear_button.pressed:
                     if not done:
                         pygame.draw.rect(screen, 'white', canvas)
-                if DONE_BUTTON.pressed:
+                if done_button.pressed:
                     done = not done
                     if done:
-                        DONE_BUTTON.set_text('Edit')
+                        done_button.set_text('Edit')
                         sub = screen.subsurface(canvas)
                         pygame.image.save(sub, FILE_PATH_FOR_SCREENSHOTS)
                         with open(FILE_PATH_FOR_SCREENSHOTS, 'rb') as image_file:
@@ -213,16 +281,16 @@ def draw_screen(screen, clock, my_socket):
                             # Ensure socket is non-blocking before sending
                             my_socket.setblocking(False)
                             try:
-                                print('im sending a drawing')
                                 send(my_socket, drawing)
                                 print('I sent a drawing')
+                                logging.debug('I sent a drawing')
                                 print(drawing)
                             except socket.error as err:
                                 logging.error('Error sending drawing: ' + str(err))
                                 print('Error sending drawing: ' + str(err))
 
                     else:
-                        DONE_BUTTON.set_text('Done')
+                        done_button.set_text('Done')
 
         pygame.draw.rect(screen, active_color, [16, 566, 160, 64], 0, 7)
 
@@ -242,6 +310,7 @@ def draw_screen(screen, clock, my_socket):
             data = recv(my_socket)
             if data == 'start guessing':
                 print("Server detected all drawings, moving on...")
+                logging.debug("Server detected all drawings, moving on...")
                 active = False
         except BlockingIOError:
             pass
@@ -251,7 +320,19 @@ def draw_screen(screen, clock, my_socket):
 
 
 def first_sentence(screen, clock, my_socket):
-    SEND_BUTTON = AnimatedButton('Send', 150, 40, (938, 658), 8)
+    """
+        Handles the screen where the player inputs the first sentence.
+
+        :param screen: The screen on which to display the input box and send button.
+        :type screen: pygame.Surface
+        :param clock: The Pygame clock object.
+        :type clock: pygame.time.Clock
+        :param my_socket: The socket for communication with the server.
+        :type my_socket: socket.socket
+        :return: True if the sentence was successfully sent, False if the user quit.
+        :rtype: bool
+    """
+    send_button = AnimatedButton('Send', 150, 40, (938, 658), 8)
     screen.fill((52, 78, 91))
 
     my_socket.setblocking(False)
@@ -262,18 +343,17 @@ def first_sentence(screen, clock, my_socket):
 
     sent = False
     active = True
-    recv_buffer = ''
     while active:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return False
             if event.type == pygame.MOUSEBUTTONUP:
-                if SEND_BUTTON.pressed:
+                if send_button.pressed:
                     if sentence != '' and sentence != 'all players are ready' and sentence is not None:
                         send(my_socket, sentence)
                         print('I sent: ' + sentence)
                         sent = True
-                        SEND_BUTTON.pressed = False
+                        send_button.pressed = False
             for box in input_boxes:
                 input_box.handle_event(event)
                 sentence = box.text
@@ -285,13 +365,14 @@ def first_sentence(screen, clock, my_socket):
             box.draw(screen)
 
         if not sent:
-            SEND_BUTTON.draw(screen)
+            send_button.draw(screen)
         # Update the display
         pygame.display.flip()
         try:
             data = recv(my_socket)
             if data == 'start drawing':
                 print("Server detected the sentences moving to game...")
+                logging.debug("Server detected the sentences moving to game...")
                 active = False
         except BlockingIOError:
             pass
@@ -300,6 +381,7 @@ def first_sentence(screen, clock, my_socket):
             data = recv(my_socket)
             if data == 'start drawing':
                 print("Server detected the sentences moving to game...")
+                logging.debug("Server detected the sentences moving to game...")
                 active = False
         except BlockingIOError:
             pass
@@ -309,11 +391,21 @@ def first_sentence(screen, clock, my_socket):
 
 
 def lobby(screen, clock, my_socket):
+    """
+        Handles the lobby screen where players wait until everyone is ready.
+
+        :param screen: The screen on which to display the lobby.
+        :type screen: pygame.Surface
+        :param clock: The Pygame clock object.
+        :type clock: pygame.time.Clock
+        :param my_socket: The socket for communication with the server.
+        :type my_socket: socket.socket
+        :return: The total number of players.
+        :rtype: int
+    """
     pygame.display.set_caption("Gartic Phone")
-    # READY_BUTTON = Button(image=None, pos=(100, 100),
-    #                       text_input="READY", font=FONT, base_color="White", hovering_color="Black")
-    READY_BUTTON = AnimatedButton('Ready', 200, 40, (100, 100), 8)
-    button_list = [READY_BUTTON]
+    ready_button = AnimatedButton('Ready', 200, 40, (100, 100), 8)
+    button_list = [ready_button]
 
     data = recv(my_socket)
     players_ready, total_players = data.split('/')
@@ -327,22 +419,23 @@ def lobby(screen, clock, my_socket):
                 active = False
 
             if event.type == pygame.MOUSEBUTTONUP:
-                if READY_BUTTON.pressed:
+                if ready_button.pressed:
                     is_ready = not is_ready
                     if is_ready:
-                        READY_BUTTON.set_text('Unready')
+                        ready_button.set_text('Unready')
                     else:
-                        READY_BUTTON.set_text('Ready')
+                        ready_button.set_text('Ready')
                     send(my_socket, str(is_ready))
-                    print(is_ready)
+                    logging.debug('is player ready?' + str(is_ready))
 
         try:
             data = recv(my_socket)
             print('i received: ' + data)
             # draw_text('data', FONT, (255, 255, 255), 160, 250, screen)
             players_ready, total_players = data.split('/')
-            if 2 <= int(players_ready) == int(total_players):
+            if 3 <= int(players_ready) == int(total_players):
                 print('all players are ready, moving to the sentences screen')
+                logging.debug('all players are ready, moving to the sentences screen')
                 send(my_socket, 'all players are ready')
                 active = False
         except BlockingIOError:
@@ -360,12 +453,24 @@ def lobby(screen, clock, my_socket):
 
 
 def join_screen(screen, clock, my_socket):
+    """
+        Handles the join screen where the player enters their name.
+
+        :param screen: The screen on which to display the join interface.
+        :type screen: pygame.Surface
+        :param clock: The Pygame clock object.
+        :type clock: pygame.time.Clock
+        :param my_socket: The socket for communication with the server.
+        :type my_socket: socket.socket
+        :return: True if the player successfully joined, False if the user quit.
+        :rtype: bool
+    """
     pygame.display.set_caption("join screen")
 
     screen.fill((52, 78, 91))
 
-    JOIN_BUTTON = AnimatedButton('JOIN', 200, 40, (100, 100), 8)
-    buttons_list = [JOIN_BUTTON]
+    join_button = AnimatedButton('JOIN', 200, 40, (100, 100), 8)
+    buttons_list = [join_button]
 
     user_name = ''
     input_box = InputBox(560, 344, 140, 32)
@@ -380,10 +485,9 @@ def join_screen(screen, clock, my_socket):
                 input_box.handle_event(event)
                 user_name = box.text
             if event.type == pygame.MOUSEBUTTONUP:
-                if JOIN_BUTTON.pressed:
+                if join_button.pressed:
                     if user_name != '' and user_name is not None:
                         try:
-                            print(user_name)
                             my_socket.connect(('127.0.0.1', SERVER_PORT))
                             logging.debug('connected')
                             active = False
@@ -408,6 +512,16 @@ def join_screen(screen, clock, my_socket):
 
 
 def start_screen(screen, clock):
+    """
+        Displays the start screen and waits for the user to press a key or mouse button.
+
+        :param screen: The screen on which to display the start message.
+        :type screen: pygame.Surface
+        :param clock: The Pygame clock object.
+        :type clock: pygame.time.Clock
+        :return: True if the user started the game, False if the user quit.
+        :rtype: bool
+    """
     pygame.display.set_caption("Gartic Phone")
     # img = pygame.image.load(PRESS_START_IMAGE_PATH)
     # screen.blit(img, (0, 0))
@@ -429,20 +543,22 @@ def start_screen(screen, clock):
     return True
 
 
-def set_screen():
-    os.environ['SDL_VIDEO_CENTERED'] = '1'
-    info = pygame.display.Info()
-    screen_width, screen_height = info.current_w, info.current_h
-    size = (screen_width - 10, screen_height - 50)
-    screen = pygame.display.set_mode(size, pygame.RESIZABLE)
-    return screen
-
-
 def get_font(size):  # Returns Press-Start-2P in the desired size
+    """
+        Returns a font object for rendering text.
+
+        :param size: The desired size of the font.
+        :type size: int
+        :return: The font object.
+        :rtype: pygame.font.Font
+    """
     return pygame.font.Font("assets/font.ttf", size)
 
 
 def main():
+    """
+    main
+    """
     pygame.init()
     pygame.font.init()
     my_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

@@ -1,11 +1,9 @@
 import logging
 import socket
 import threading
-import time
 from threading import Thread
 from player import Player
 from protocol import *
-import json
 
 logging.basicConfig(filename='my_log_server.log', level=logging.DEBUG)
 
@@ -30,14 +28,29 @@ switches = 0
 
 
 def send_to_everyone(player_dict, data):
+    """
+        Sends data to all players in the player dictionary.
+
+        :param player_dict: Dictionary of players
+        :type player_dict: dict
+        :param data: Data to send to players
+        :type data: str
+    """
     for sock in player_dict:
         send(sock.socket, data)
 
 
 def wait_for_ready(client_socket, player_dict):
+    """
+        Waits for all players to be ready.
+
+        :param client_socket: Client socket
+        :type client_socket: socket.socket
+        :param player_dict: Dictionary of players
+        :type player_dict: dict
+    """
     global ready_count
     while len(player_dict) != ready_count or len(player_dict) < 3:
-
         is_ready = recv(client_socket)
         if is_ready == 'all players are ready':
             break
@@ -46,13 +59,22 @@ def wait_for_ready(client_socket, player_dict):
             ready_count += 1
         else:
             ready_count -= 1
-        print(ready_count)
         print('ready players count:' + str(ready_count))
+        logging.debug('ready players count:' + str(ready_count))
         print(f'i sent: {ready_count}/{len(player_dict)}')
+        logging.debug(f'i sent: {ready_count}/{len(player_dict)}')
         send_to_everyone(player_dict, f'{ready_count}/{len(player_dict)}')
 
 
 def circular_switch(dict):
+    """
+        Performs a circular switch on the player dictionary values.
+
+        :param dict: Dictionary to switch values
+        :type dict: dict
+        :return: Modified dictionary with switched values
+        :rtype: dict
+    """
     global switches
     switches += 1
 
@@ -63,6 +85,7 @@ def circular_switch(dict):
         return dict
 
     print('circular switch')
+    logging.debug('circular switch')
     # Get the list of keys and values
     keys = list(dict.keys())
     values = list(dict.values())
@@ -78,67 +101,122 @@ def circular_switch(dict):
 
 
 def receive_drawing(client_socket, player_dict, this_player):
+    """
+        Receives a drawing from a player.
+
+        :param client_socket: Client socket
+        :type client_socket: socket.socket
+        :param player_dict: Dictionary of players
+        :type player_dict: dict
+        :param this_player: Current player
+        :type this_player: Player
+    """
     print('waiting to receive a drawing from player - ' + str(this_player))
+    logging.debug('waiting to receive a drawing from player - ' + str(this_player))
     global drawings_count
     drawing = recv(client_socket)
     if drawing != '' and drawing is not None:
         print('found a drawing from player: ' + str(this_player))
-        print(drawing)
+        logging.debug('found a drawing from player: ' + str(this_player))
         player_dict[this_player] = drawing
         print(player_dict)
 
     drawings_count += 1
     print('ready drawings: ' + str(drawings_count))
+    logging.debug('ready drawings: ' + str(drawings_count))
 
 
 def receive_sentence(client_socket, player_dict, this_player):
+    """
+        Receives a sentence from a player.
+
+        :param client_socket: Client socket
+        :type client_socket: socket.socket
+        :param player_dict: Dictionary of players
+        :type player_dict: dict
+        :param this_player: Current player
+        :type this_player: Player
+    """
     print('waiting to receive a sentence from player - ' + str(this_player))
+    logging.debug('waiting to receive a sentence from player - ' + str(this_player))
     global sentences_count
     while True:
         sentence = recv(client_socket)
         if sentence != '' and sentence is not None and sentence != 'all players are ready':
             print('found a sentence from player: ' + sentence + ', from: ' + str(this_player))
+            logging.debug('found a sentence from player: ' + sentence + ', from: ' + str(this_player))
             player_dict[this_player] = sentence
             break
 
     sentences_count += 1
     print('ready sentences: ' + str(sentences_count))
+    logging.debug('ready sentences: ' + str(sentences_count))
 
 
 def send_sentence(client_socket, player_dict, this_player):
+    """
+        Sends a sentence to a player.
+
+        :param client_socket: Client socket
+        :type client_socket: socket.socket
+        :param player_dict: Dictionary of players
+        :type player_dict: dict
+        :param this_player: Current player
+        :type this_player: Player
+    """
     global send_sentence_count
     print('waiting to player request for sentence - ' + str(this_player))
+    logging.debug('waiting to player request for sentence - ' + str(this_player))
     while True:
         request = recv(client_socket)
         if request == 'give sentence':
             print("sending the sentence: " + str(player_dict[this_player]) + " to player: " + str(this_player))
+            logging.debug("sending the sentence: " + str(player_dict[this_player]) + " to player: " + str(this_player))
             send(client_socket, player_dict[this_player])
             break
 
     send_sentence_count += 1
     print('ready sentences: ' + str(sentences_count))
+    logging.debug('ready sentences: ' + str(sentences_count))
 
 
 def send_drawings(client_socket, player_dict_drawing, this_player):
+    """
+        Sends a drawing to a player.
+
+        :param client_socket: Client socket
+        :type client_socket: socket.socket
+        :param player_dict_drawing: Dictionary of drawings
+        :type player_dict_drawing: dict
+        :param this_player: Current player
+        :type this_player: Player
+    """
     global send_drawings_count
     print('waiting to player request for drawing - ' + str(this_player))
+    logging.debug('waiting to player request for drawing - ' + str(this_player))
     while True:
         request = recv(client_socket)
         if request == 'give drawing':
             print("sending the drawing to player: " + str(this_player))
+            logging.debug("sending the drawing to player: " + str(this_player))
             send(client_socket, player_dict_drawing[this_player])
             break
 
     send_drawings_count += 1
     print('ready sentences: ' + str(drawings_count))
+    logging.debug('ready sentences: ' + str(drawings_count))
 
 
 def handle_connection(client_socket, player_dict, this_player):
     """
-    handle a connection
-    :param client_socket: the connection socket
-    :param client_address: the remote address
-    :return: None
+    Handles a connection from a player.
+
+    :param client_socket: Client socket
+    :type client_socket: socket.socket
+    :param player_dict: Dictionary of players
+    :type player_dict: dict
+    :param this_player: Current player
+    :type this_player: Player
     """
     global game_started
     try:
@@ -148,6 +226,7 @@ def handle_connection(client_socket, player_dict, this_player):
 
         wait_for_ready(client_socket, player_dict)
         print('game started')
+        logging.debug('game started')
         game_started = True
         # ----------------------------------------------------------------------first sentence
         receive_sentence(client_socket, player_dict, this_player)
@@ -158,6 +237,7 @@ def handle_connection(client_socket, player_dict, this_player):
         while sentences_count != 0 and sentences_count % len(player_dict) != 0:
             pass
         print('received all sentences')
+        logging.debug('received all sentences')
         send(client_socket, 'start drawing')
         i = 0
         while i < len(player_dict) - 1:
@@ -174,6 +254,7 @@ def handle_connection(client_socket, player_dict, this_player):
                 pass
 
             print('waiting for receiving drawings')
+            logging.debug('waiting for receiving drawings')
 
             player_dict_drawing = player_dict
             receive_drawing(client_socket, player_dict_drawing, this_player)
@@ -182,6 +263,7 @@ def handle_connection(client_socket, player_dict, this_player):
                 pass
 
             print('received all drawings')
+            logging.debug('received all drawings')
             i += 1
             if i == len(player_dict) - 1:
                 break
@@ -199,6 +281,7 @@ def handle_connection(client_socket, player_dict, this_player):
             while send_drawings_count != 0 and send_drawings_count % len(player_dict_drawing) != 0:
                 pass
             print('waiting for receiving sentences')
+            logging.debug('waiting for receiving sentences')
 
             player_dict = player_dict_drawing
             receive_sentence(client_socket, player_dict, this_player)
@@ -209,17 +292,21 @@ def handle_connection(client_socket, player_dict, this_player):
                 pass
 
             print('received all sentences')
+            logging.debug('received all sentences')
             i += 1
             send(client_socket, 'start drawing')
 
         print('done')
+        logging.debug('done')
 
     except socket.error as err:
         print('received socket exception - ' + str(err))
+        logging.error('received socket exception - ' + str(err))
     finally:
         print('closing client socket')
         client_socket.close()
         print('client socket closed')
+
 
 def main():
     """
@@ -237,7 +324,7 @@ def main():
         while True:
             client_socket, client_address = server_socket.accept()
             print('New connection received from ' + client_address[0] + ':' + str(client_address[1]))
-
+            logging.debug('New connection received from ' + client_address[0] + ':' + str(client_address[1]))
             name = recv(client_socket)
             this_player = Player(name, client_socket, client_address)
             player_dict[this_player] = ''
